@@ -26,6 +26,30 @@
     return id.join('');
   };
 
+  function escapeHTML(unsafe) {
+    // Copied from jwTargets
+
+    return unsafe
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function trueSign(n) {
+  	// The `1 / result < 0` expression catches -0.
+  	return (result < 0 || 1 / result < 0) ? -1 : 1;
+  }
+
+  function mod(n, m = 1) {
+  	if (trueSign(n) === -1) {
+  		return (m - Math.abs(n % m)) % m;
+  	} else {
+  		return n % m;
+  	}
+  }
+
   async function getExtensionURL(url) {
   	return await fetch(url)
       .then(request => request.text());
@@ -54,23 +78,19 @@
 			return new MArrayType(); // @TODO
 		}
 
-		constructor(array = []) {
+		constructor(array = null) {
+			if (array === null) array = [];
+
 			this.array = array;
 			this.id = uid();
 		}
 
 		toString() {
-			return JSON.stringify(this.array);
+			return 'TODO'; // @TODO
 		}
 
 		toJSON() {
-			return this.array.map(v => {
-				if (typeof v == "object" && v !== null) {
-					if (v.toJSON && typeof v.toJSON == "function") return v.toJSON()
-					if (v.toSting && typeof v.toString == "function") return v.toString()
-				}
-				return v
-			})
+			return `Mutable Array<${this.length}>`; // @TODO
 		}
 
 		static fromJSON(JSON) {
@@ -97,11 +117,11 @@
 		}
 
 		jwArrayHandler() {
-			return `Mutable Array<${this.length}>`
+			return `<span style="color: #ff3d6e">M</span>Array${escapeHTML(`<${this.length}>`)}`;
 		}
 
 		dogeiscutObjectHandler() {
-			return this.jwArrayHandler()
+			return '<i>TODO</i>'; // @TODO
 		}
 
 		toListEditor() {
@@ -362,36 +382,50 @@
 				],
 			};
 		}
+
 		newEmpty() {
-			new MArrayType()
+			return new MArrayType();
 		}
-		newNullFilled({ LENGTH }) {
-			new MArrayType(Array(LENGTH))
+
+		newNullFilled({LENGTH}) {
+			LENGTH = Scratch.Cast.toNumber(LENGTH);
+			LENGTH = Math.max(Math.floor(LENGTH), 0);
+
+			return new MArrayType(Array(LENGTH).fill(null));
 		}
-		newFilled({ LENGTH, VALUE }) {
-			new MArrayType(Array(LENGTH).fill(LENGTH))
+
+		newFilled({LENGTH, VALUE}) {
+			return new MArrayType(Array(LENGTH).fill(LENGTH));
 		}
-		parse({ VALUE }) {
-			try {
-				return new MArrayType(JSON.parse(VALUE))
-			} catch(_) {
-				return new MArrayType([VALUE])
-			}
+
+		parse({VALUE}) {
+			return MArrayType.toMArray(VALUE);
 		}
-		split({ STRING, DELIMITER }) {
-			STRING = Scratch.Cast.toString(STRING)
-			DELIMITER = Scratch.Cast.toString(DELIMITER)
-			return new MArrayType(STRING.split(DELIMITER))
+
+		split({STRING, DELIMITER}) {
+			STRING = Scratch.Cast.toString(STRING);
+			DELIMITER = Scratch.Cast.toString(DELIMITER);
+
+			return new MArrayType(STRING.split(DELIMITER));
 		}
-		isMArray({ VALUE }) {
-			return VALUE instanceof MArrayType
+
+		isMArray({VALUE}) {
+			return VALUE instanceof MArrayType;
 		}
-		length({ MARRAY }) {
-			return MArrayType.toMArray(MARRAY).length
+
+		length({MARRAY}) {
+			return MArrayType.toMArray(MARRAY).length;
 		}
-		get({ INDEX, MARRAY }) {
-			return MArrayType.toMArray(MARRAY)[INDEX]
+
+		get({MARRAY, INDEX}) {
+			MARRAY = MArrayType.toMArray(MARRAY);
+			if (MARRAY.length === 0) return '';
+			INDEX = Scratch.Cast.toNumber(INDEX);
+
+			INDEX = mod(Math.floor(INDEX), MARRAY.length);
+			return MARRAY.array[INDEX];
 		}
+
 	}
 
 	// Validate environment
