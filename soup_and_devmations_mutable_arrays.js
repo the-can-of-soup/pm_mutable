@@ -92,7 +92,7 @@
 		}
 
 		jwArrayHandler() {
-			return `Mutable Array<${this.array.length}>`
+			return `Mutable Array<${this.length}>`
 		}
 
 		dogeiscutObjectHandler() {
@@ -388,6 +388,12 @@
 		}
 		isMArray({ VALUE }) {
 			return VALUE instanceof MArrayType
+		}
+		length({ MARRAY }) {
+			return MArrayType.toMArray(MARRAY).length
+		}
+		get({ INDEX, MARRAY }) {
+			return MArrayType.toMArray(MARRAY)[INDEX]
 		}
 	}
 
