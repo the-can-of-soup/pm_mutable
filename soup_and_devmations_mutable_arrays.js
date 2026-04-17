@@ -90,7 +90,7 @@
 		}
 
 		toJSON() {
-			return `Mutable Array<${this.length}>`; // @TODO
+			return {}; // @TODO
 		}
 
 		static fromJSON(JSON) {
