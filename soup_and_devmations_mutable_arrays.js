@@ -26,6 +26,11 @@
     return id.join('');
   };
 
+  async function getExtensionURL(url) {
+  	return await fetch(url)
+      .then(request => request.text());
+  }
+
 	class MArrayType {
 		// PenguinMod
 		customId = 'dvSoupMArray';
@@ -49,23 +54,18 @@
 			return new MArrayType(); // @TODO
 		}
 
-		constructor(array = []) {
+		constructor(array = null) {
+			if (array === null) array = [];
 			this.array = array;
 			this.id = uid();
 		}
 
 		toString() {
-			return JSON.stringify(this.array);
+			return 'TODO'; // @TODO
 		}
 
 		toJSON() {
-			return this.array.map(v => {
-				if (typeof v == "object" && v !== null) {
-					if (v.toJSON && typeof v.toJSON == "function") return v.toJSON()
-					if (v.toString && typeof v.toString == "function") return v.toString()
-				}
-				return v
-			})
+			return {}; // @TODO
 		}
 
 		static fromJSON(JSON) {
@@ -92,11 +92,11 @@
 		}
 
 		jwArrayHandler() {
-			return `Mutable Array<${this.length}>`
+			return '<i>TODO</i>'; // @TODO
 		}
 
 		dogeiscutObjectHandler() {
-			return this.jwArrayHandler()
+			return '<i>TODO</i>'; // @TODO
 		}
 
 		toListEditor() {
@@ -136,24 +136,16 @@
 
 	class MArraysExtension {
 		constructor() {
+			// Register compiled blocks
+			// @TODO
+
+			// Register mutable array type
 			vm.MArray = MArray;
 			runtime.registerSerializer(
 				'dvSoupMArray',
 				MArrayType.serialize,
 				MArrayType.unserialize,
 			);
-		}
-
-		static async loadDependencies() {
-			// @TODO remove debug
-			debugger;
-			if (!vm.jwLambda) vm.extensionManager.loadExtensionIdSync('jwLambda');
-			debugger;
-      if (!vm.divIterator) await vm.extensionManager.loadExtensionURL('https://extensions.penguinmod.com/extensions/Div/divIterators.js');
-      debugger;
-			jwLambda = vm.jwLambda;
-			divIterator = vm.divIterator;
-			debugger;
 		}
 
 		getInfo() {
@@ -365,53 +357,16 @@
 				],
 			};
 		}
-		newEmpty() {
-			new MArrayType()
-		}
-		newNullFilled({ LENGTH }) {
-			new MArrayType(Array(LENGTH))
-		}
-		newFilled({ LENGTH, VALUE }) {
-			new MArrayType(Array(LENGTH).fill(LENGTH))
-		}
-		parse({ VALUE }) {
-			try {
-				return new MArrayType(JSON.parse(VALUE))
-			} catch(_) {
-				return new MArrayType([VALUE])
-			}
-		}
-		split({ STRING, DELIMITER }) {
-			STRING = Scratch.Cast.toString(STRING)
-			DELIMITER = Scratch.Cast.toString(DELIMITER)
-			return new MArrayType(STRING.split(DELIMITER))
-		}
-		isMArray({ VALUE }) {
-			return VALUE instanceof MArrayType
-		}
-		length({ MARRAY }) {
-			return MArrayType.toMArray(MARRAY).length
-		}
-		get({ INDEX, MARRAY }) {
-			return MArrayType.toMArray(MARRAY)[INDEX]
-		}
 	}
 
-	// Load extension
+	// Validate environment
+	let canLoad = false;
   if (Array.from(vm.extensionManager._loadedExtensions.keys()).includes('dvSoupMArrays')) {
     console.warn('Soup and Devmations\' Mutable Arrays extension attempted to be loaded while already present in the project; ignoring');
   } else {
     if (Scratch.extensions.isPenguinMod /* && !Scratch.extensions.isDinosaurMod */) {
       if (Scratch.extensions.unsandboxed) {
-      	// Load dependencies
-      	MArraysExtension.loadDependencies().then(function() {
-					// Create and register extension
-	        Scratch.extensions.register(new MArraysExtension());
-				}).catch(function(error) {
-					alert(`Failed to load dependencies for Soup and Devmations\' Mutable Arrays: ${error.message}`);
-					console.error('Failed to load dependencies for Soup and Devmations\' Mutable Arrays:');
-					throw error;
-				});
+      	canLoad = true;
       } else {
         alert('Please load Soup and Devmations\' Mutable Arrays unsandboxed.');
         throw new Error('Soup and Devmations\' Mutable Arrays extension attempted to be loaded sandboxed');
@@ -421,5 +376,39 @@
       throw new Error('Soup and Devmations\' Mutable Arrays extension attempted to be loaded outside of PenguinMod');
     }
   }
+  if (!canLoad) {
+  	return;
+  }
+
+  // Load extension
+  (async function() {
+  	console.log('[Mutable Arrays] Loading dependencies...');
+
+  	try {
+  		let externalExtSources = [];
+
+  		// Dependencies
+			if (!vm.jwLambda) vm.extensionManager.loadExtensionIdSync('jwLambda');
+      if (!vm.divIterator) externalExtSources.push(await getExtensionURL('https://extensions.penguinmod.com/extensions/Div/divIterators.js'));
+
+      for (let source of externalExtSources) {
+      	eval(source);
+      }
+
+      // Dependency custom types
+			jwLambda = vm.jwLambda;
+			divIterator = vm.divIterator;
+  	} catch (error) {
+  		alert(`Failed to load dependencies for Soup and Devmations\' Mutable Arrays: ${error.message}`);
+			console.error('Failed to load dependencies for Soup and Devmations\' Mutable Arrays:');
+			throw error;
+  	}
+
+  	console.log('[Mutable Arrays] Loading...');
+
+  	Scratch.extensions.register(new MArraysExtension());
+
+  	console.log('[Mutable Arrays] Loaded!');
+  })();
 
 })(Scratch);
