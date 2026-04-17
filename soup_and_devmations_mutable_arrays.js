@@ -54,18 +54,23 @@
 			return new MArrayType(); // @TODO
 		}
 
-		constructor(array = null) {
-			if (array === null) array = [];
+		constructor(array = []) {
 			this.array = array;
 			this.id = uid();
 		}
 
 		toString() {
-			return 'TODO'; // @TODO
+			return JSON.stringify(this.array);
 		}
 
 		toJSON() {
-			return {}; // @TODO
+			return this.array.map(v => {
+				if (typeof v == "object" && v !== null) {
+					if (v.toJSON && typeof v.toJSON == "function") return v.toJSON()
+					if (v.toSting && typeof v.toString == "function") return v.toString()
+				}
+				return v
+			})
 		}
 
 		static fromJSON(JSON) {
@@ -92,11 +97,11 @@
 		}
 
 		jwArrayHandler() {
-			return '<i>TODO</i>'; // @TODO
+			return `Mutable Array<${this.length}>`
 		}
 
 		dogeiscutObjectHandler() {
-			return '<i>TODO</i>'; // @TODO
+			return this.jwArrayHandler()
 		}
 
 		toListEditor() {
@@ -356,6 +361,36 @@
 
 				],
 			};
+		}
+		newEmpty() {
+			new MArrayType()
+		}
+		newNullFilled({ LENGTH }) {
+			new MArrayType(Array(LENGTH))
+		}
+		newFilled({ LENGTH, VALUE }) {
+			new MArrayType(Array(LENGTH).fill(LENGTH))
+		}
+		parse({ VALUE }) {
+			try {
+				return new MArrayType(JSON.parse(VALUE))
+			} catch(_) {
+				return new MArrayType([VALUE])
+			}
+		}
+		split({ STRING, DELIMITER }) {
+			STRING = Scratch.Cast.toString(STRING)
+			DELIMITER = Scratch.Cast.toString(DELIMITER)
+			return new MArrayType(STRING.split(DELIMITER))
+		}
+		isMArray({ VALUE }) {
+			return VALUE instanceof MArrayType
+		}
+		length({ MARRAY }) {
+			return MArrayType.toMArray(MARRAY).length
+		}
+		get({ INDEX, MARRAY }) {
+			return MArrayType.toMArray(MARRAY)[INDEX]
 		}
 	}
 
