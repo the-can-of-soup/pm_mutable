@@ -26,6 +26,30 @@
     return id.join('');
   };
 
+  function escapeHTML(unsafe) {
+    // Copied from jwTargets
+
+    return unsafe
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function trueSign(n) {
+  	// The `1 / result < 0` expression catches -0.
+  	return (result < 0 || 1 / result < 0) ? -1 : 1;
+  }
+
+  function mod(n, m = 1) {
+  	if (trueSign(n) === -1) {
+  		return (m - Math.abs(n % m)) % m;
+  	} else {
+  		return n % m;
+  	}
+  }
+
   async function getExtensionURL(url) {
   	return await fetch(url)
       .then(request => request.text());
@@ -56,6 +80,7 @@
 
 		constructor(array = null) {
 			if (array === null) array = [];
+
 			this.array = array;
 			this.id = uid();
 		}
@@ -92,7 +117,7 @@
 		}
 
 		jwArrayHandler() {
-			return '<i>TODO</i>'; // @TODO
+			return `<span style="color: #ff3d6e">M</span>Array${escapeHTML(`<${this.length}>`)}`;
 		}
 
 		dogeiscutObjectHandler() {
@@ -357,6 +382,50 @@
 				],
 			};
 		}
+
+		newEmpty() {
+			return new MArrayType();
+		}
+
+		newNullFilled({LENGTH}) {
+			LENGTH = Scratch.Cast.toNumber(LENGTH);
+			LENGTH = Math.max(Math.floor(LENGTH), 0);
+
+			return new MArrayType(Array(LENGTH).fill(null));
+		}
+
+		newFilled({LENGTH, VALUE}) {
+			return new MArrayType(Array(LENGTH).fill(LENGTH));
+		}
+
+		parse({VALUE}) {
+			return MArrayType.toMArray(VALUE);
+		}
+
+		split({STRING, DELIMITER}) {
+			STRING = Scratch.Cast.toString(STRING);
+			DELIMITER = Scratch.Cast.toString(DELIMITER);
+
+			return new MArrayType(STRING.split(DELIMITER));
+		}
+
+		isMArray({VALUE}) {
+			return VALUE instanceof MArrayType;
+		}
+
+		length({MARRAY}) {
+			return MArrayType.toMArray(MARRAY).length;
+		}
+
+		get({MARRAY, INDEX}) {
+			MARRAY = MArrayType.toMArray(MARRAY);
+			if (MARRAY.length === 0) return '';
+			INDEX = Scratch.Cast.toNumber(INDEX);
+
+			INDEX = mod(Math.floor(INDEX), MARRAY.length);
+			return MARRAY.array[INDEX];
+		}
+
 	}
 
 	// Validate environment
