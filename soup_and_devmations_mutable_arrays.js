@@ -809,6 +809,19 @@
 						};
 					},
 
+					builder(generator, block) {
+						generator.script.yields = true
+						return {
+							kind: 'input',
+							substack: generator.descendSubstack(block, 'SUBSTACK')
+						}
+					},
+
+					builderCurrent(generator, block) {
+						return {
+							kind: 'input'
+						}
+					},
 				},
 				js: {
 
@@ -904,6 +917,25 @@
 						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
 					},
 
+					builder(node, compiler, imports) {
+						const src = compiler.source
+						compiler.source = 'vm.dvSoupMArray.Type.toMArray(yield* (function*() {'
+						compiler.source += `thread._dvSoupMArrayBuilderVal ?? = [];`
+						compiler.source += `thread._dvSoupMArrayBuilderVal.push([]);`
+						compiler.descendStack(node.substack, new imports.Frame(false, undefined, true));
+						compiler.source += `return thread._dvSoupMArrayBuilderVal.pop();`
+						compiler.source += `})())`;
+						const typedinput = compiler.source
+						compiler.source = src
+						return new imports.TypedInput(typedinput, imports.TYPE_UNKNOWN)
+					},
+
+					builderCurrent(node, compiler, imports) {
+						let src = 'let d = thread._dvSoupMArrayBuilderVal ?? [];'
+						src += 'let v = d[d.length - 1];'
+						src += 'return vm.dvSoupMArray.Type.toMArray(v ? v : [])'
+						return new imports.TypedInput(src, imports.TYPE_UNKNOWN)
+					},
 				},
 			};
 		}
