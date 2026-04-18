@@ -162,7 +162,7 @@
 	class MArraysExtension {
 		constructor() {
 			// Register compiled blocks
-			// @TODO
+      runtime.registerCompiledExtensionBlocks('dvSoupMArrays', MArraysExtension.getCompileInfo());
 
 			// Register mutable array type
 			vm.MArray = MArray;
@@ -380,6 +380,17 @@
 					},
 
 				],
+			};
+		}
+
+		static getCompileInfo() {
+			return {
+				ir: {
+					
+				},
+				js: {
+					
+				},
 			};
 		}
 
