@@ -10,6 +10,7 @@
 	const vm = Scratch.vm;
 	const runtime = vm.runtime;
 
+	let jwArray;
 	let jwLambda;
 	let divIterator;
 
@@ -38,8 +39,8 @@
   }
 
   function trueSign(n) {
-  	// The `1 / result < 0` expression catches -0.
-  	return (result < 0 || 1 / result < 0) ? -1 : 1;
+  	// The `1 / n < 0` expression catches -0.
+  	return (n < 0 || 1 / n < 0) ? -1 : 1;
   }
 
   function mod(n, m = 1) {
@@ -53,6 +54,16 @@
   async function getExtensionURL(url) {
   	return await fetch(url)
       .then(request => request.text());
+  }
+
+  class Util {
+  	static vm = vm;
+  	static runtime = runtime;
+
+  	static uid = uid;
+  	static escapeHTML = escapeHTML;
+  	static trueSign = trueSign;
+  	static mod = mod;
   }
 
 	class MArrayType {
@@ -161,11 +172,14 @@
 
 	class MArraysExtension {
 		constructor() {
+			// Save reference to helper functions
+			vm.dvSoupMArraysUtil = Util;
+
 			// Register compiled blocks
       runtime.registerCompiledExtensionBlocks('dvSoupMArrays', MArraysExtension.getCompileInfo());
 
 			// Register mutable array type
-			vm.MArray = MArray;
+			vm.dvSoupMArray = MArray;
 			runtime.registerSerializer(
 				'dvSoupMArray',
 				MArrayType.serialize,
@@ -386,57 +400,175 @@
 		static getCompileInfo() {
 			return {
 				ir: {
-					
+
+					newEmpty(generator, block) {
+						return {
+							kind: 'input',
+						};
+					},
+
+					newNullFilled(generator, block) {
+						return {
+							kind: 'input',
+							args: {
+								LENGTH: generator.descendInputOfBlock(block, 'LENGTH'),
+							},
+						};
+					},
+
+					newFilled(generator, block) {
+						return {
+							kind: 'input',
+							args: {
+								LENGTH: generator.descendInputOfBlock(block, 'LENGTH'),
+								VALUE: generator.descendInputOfBlock(block, 'VALUE'),
+							},
+						};
+					},
+
+					parse(generator, block) {
+						return {
+							kind: 'input',
+							args: {
+								VALUE: generator.descendInputOfBlock(block, 'VALUE'),
+							},
+						};
+					},
+
+					split(generator, block) {
+						return {
+							kind: 'input',
+							args: {
+								STRING: generator.descendInputOfBlock(block, 'STRING'),
+								DELIMITER: generator.descendInputOfBlock(block, 'DELIMITER'),
+							},
+						};
+					},
+
+					isMArray(generator, block) {
+						return {
+							kind: 'input',
+							args: {
+								VALUE: generator.descendInputOfBlock(block, 'VALUE'),
+							},
+						};
+					},
+
+
+
+					length(generator, block) {
+						return {
+							kind: 'input',
+							args: {
+								MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+							},
+						};
+					},
+
+					get(generator, block) {
+						return {
+							kind: 'input',
+							args: {
+								MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+								INDEX: generator.descendInputOfBlock(block, 'INDEX'),
+							},
+						};
+					},
+
 				},
 				js: {
-					
+
+					newEmpty(node, compiler, imports) {
+						let source = '';
+						source += `(`;
+
+						source += `new vm.dvSoupMArray.Type()`;
+
+						source += `)`;
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+					},
+
+					newNullFilled(node, compiler, imports) {
+						let source = '';
+						source += `(`;
+
+						source += `return new vm.dvSoupMArray.Type(Array(`;
+						source += `Math.max(Math.floor(${compiler.descendInput(node.args.LENGTH).asNumber()}), 0)`;
+						source += `).fill(null));`;
+
+						source += `)`;
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+					},
+
+					newFilled(node, compiler, imports) {
+						let source = '';
+						source += `(`;
+
+						source += `return new vm.dvSoupMArray.Type(Array(`;
+						source += `Math.max(Math.floor(${compiler.descendInput(node.args.LENGTH).asNumber()}), 0)`;
+						source += `).fill(${compiler.descendInput(node.args.VALUE).asUnknown()}));`;
+
+						source += `)`;
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+					},
+
+					parse(node, compiler, imports) {
+						let source = '';
+
+						source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.VALUE).asUnknown()})`;
+
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+					},
+
+					split(node, compiler, imports) {
+						let source = '';
+						source += `(`;
+
+						source += `new vm.dvSoupMArray.Type(${compiler.descendInput(node.args.STRING).asString()}.split(${compiler.descendInput(node.args.DELIMITER).asString()}))`;
+
+						source += `)`;
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+					},
+
+					isMArray(node, compiler, imports) {
+						let source = '';
+						source += `(`;
+
+						source += `${compiler.descendInput(node.args.VALUE).asUnknown()} instanceof vm.dvSoupMArray.Type`;
+
+						source += `)`;
+						return new imports.TypedInput(source, imports.TYPE_BOOLEAN);
+					},
+
+
+
+					length(node, compiler, imports) {
+						let source = '';
+
+						source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).length`;
+
+						return new imports.TypedInput(source, imports.TYPE_NUMBER);
+					},
+
+					get(node, compiler, imports) {
+						let source = '';
+						source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
+
+						let MARRAY = compiler.localVariables.next();
+						source += `let ${MARRAY} = vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()});`;
+						source += `if (${MARRAY}.length === 0) return '';`;
+
+						source += `return ${MARRAY}.array[`;
+						source += `vm.dvSoupMArraysUtil.mod(Math.floor(${compiler.descendInput(node.args.INDEX).asNumber()}), ${MARRAY}.length)`
+						source += `];`;
+
+						source += compiler.script.yields ? `})())` : `})()`;
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+					},
+
 				},
 			};
 		}
-
-		newEmpty() {
-			return new MArrayType();
-		}
-
-		newNullFilled({LENGTH}) {
-			LENGTH = Scratch.Cast.toNumber(LENGTH);
-			LENGTH = Math.max(Math.floor(LENGTH), 0);
-
-			return new MArrayType(Array(LENGTH).fill(null));
-		}
-
-		newFilled({LENGTH, VALUE}) {
-			return new MArrayType(Array(LENGTH).fill(LENGTH));
-		}
-
-		parse({VALUE}) {
-			return MArrayType.toMArray(VALUE);
-		}
-
-		split({STRING, DELIMITER}) {
-			STRING = Scratch.Cast.toString(STRING);
-			DELIMITER = Scratch.Cast.toString(DELIMITER);
-
-			return new MArrayType(STRING.split(DELIMITER));
-		}
-
-		isMArray({VALUE}) {
-			return VALUE instanceof MArrayType;
-		}
-
-		length({MARRAY}) {
-			return MArrayType.toMArray(MARRAY).length;
-		}
-
-		get({MARRAY, INDEX}) {
-			MARRAY = MArrayType.toMArray(MARRAY);
-			if (MARRAY.length === 0) return '';
-			INDEX = Scratch.Cast.toNumber(INDEX);
-
-			INDEX = mod(Math.floor(INDEX), MARRAY.length);
-			return MARRAY.array[INDEX];
-		}
-
 	}
 
 	// Validate environment
@@ -468,6 +600,7 @@
   		let externalExtSources = [];
 
   		// Dependencies
+  		if (!vm.jwArray) vm.extensionManager.loadExtensionIdSync('jwArray');
 			if (!vm.jwLambda) vm.extensionManager.loadExtensionIdSync('jwLambda');
       if (!vm.divIterator) externalExtSources.push(await getExtensionURL('https://extensions.penguinmod.com/extensions/Div/divIterators.js'));
 
@@ -476,6 +609,7 @@
       }
 
       // Dependency custom types
+      jwArray = vm.jwArray;
 			jwLambda = vm.jwLambda;
 			divIterator = vm.divIterator;
   	} catch (error) {
