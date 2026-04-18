@@ -490,29 +490,25 @@
 
 					newNullFilled(node, compiler, imports) {
 						let source = '';
-						source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
+						source += `(`;
 
-						let LENGTH = compiler.localVariables.next();
-						source += `let ${LENGTH} = ${compiler.descendInput(node.args.LENGTH).asNumber()};`;
-						source += `${LENGTH} = Math.max(Math.floor(${LENGTH}), 0);`;
+						source += `return new vm.dvSoupMArray.Type(Array(`;
+						source += `Math.max(Math.floor(${compiler.descendInput(node.args.LENGTH).asNumber()}), 0)`;
+						source += `).fill(null));`;
 
-						source += `return new vm.dvSoupMArray.Type(Array(${LENGTH}).fill(null));`;
-
-						source += compiler.script.yields ? `})())` : `})()`;
+						source += `)`;
 						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
 					},
 
 					newFilled(node, compiler, imports) {
 						let source = '';
-						source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
+						source += `(`;
 
-						let LENGTH = compiler.localVariables.next();
-						source += `let ${LENGTH} = ${compiler.descendInput(node.args.LENGTH).asNumber()};`;
-						source += `${LENGTH} = Math.max(Math.floor(${LENGTH}), 0);`;
+						source += `return new vm.dvSoupMArray.Type(Array(`;
+						source += `Math.max(Math.floor(${compiler.descendInput(node.args.LENGTH).asNumber()}), 0)`;
+						source += `).fill(${compiler.descendInput(node.args.VALUE).asUnknown()}));`;
 
-						source += `return new vm.dvSoupMArray.Type(Array(${LENGTH}).fill(${compiler.descendInput(node.args.VALUE).asUnknown()}));`;
-
-						source += compiler.script.yields ? `})())` : `})()`;
+						source += `)`;
 						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
 					},
 
@@ -562,9 +558,9 @@
 						source += `let ${MARRAY} = vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()});`;
 						source += `if (${MARRAY}.length === 0) return '';`;
 
-						let INDEX = compiler.localVariables.next();
-						source += `let ${INDEX} = vm.dvSoupMArraysUtil.mod(Math.floor(${compiler.descendInput(node.args.INDEX).asNumber()}), ${MARRAY}.length);`;
-						source += `return ${MARRAY}.array[${INDEX}];`;
+						source += `return ${MARRAY}.array[`;
+						source += `vm.dvSoupMArraysUtil.mod(Math.floor(${compiler.descendInput(node.args.INDEX).asNumber()}), ${MARRAY}.length)`
+						source += `];`;
 
 						source += compiler.script.yields ? `})())` : `})()`;
 						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
