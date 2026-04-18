@@ -826,9 +826,9 @@
 						let source = '';
 						source += `(`;
 
-						source += `return new vm.dvSoupMArray.Type(Array(`;
+						source += `new vm.dvSoupMArray.Type(Array(`;
 						source += `Math.max(Math.floor(${compiler.descendInput(node.args.LENGTH).asNumber()}), 0)`;
-						source += `).fill(null));`;
+						source += `).fill(null))`;
 
 						source += `)`;
 						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
@@ -838,9 +838,9 @@
 						let source = '';
 						source += `(`;
 
-						source += `return new vm.dvSoupMArray.Type(Array(`;
+						source += `new vm.dvSoupMArray.Type(Array(`;
 						source += `Math.max(Math.floor(${compiler.descendInput(node.args.LENGTH).asNumber()}), 0)`;
-						source += `).fill(${compiler.descendInput(node.args.VALUE).asUnknown()}));`;
+						source += `).fill(${compiler.descendInput(node.args.VALUE).asUnknown()}))`;
 
 						source += `)`;
 						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
