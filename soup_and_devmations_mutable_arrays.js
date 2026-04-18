@@ -10,6 +10,7 @@
 	const vm = Scratch.vm;
 	const runtime = vm.runtime;
 
+	let jwArray;
 	let jwLambda;
 	let divIterator;
 
@@ -165,7 +166,7 @@
       runtime.registerCompiledExtensionBlocks('dvSoupMArrays', MArraysExtension.getCompileInfo());
 
 			// Register mutable array type
-			vm.MArray = MArray;
+			vm.dvSoupMArray = MArray;
 			runtime.registerSerializer(
 				'dvSoupMArray',
 				MArrayType.serialize,
@@ -386,16 +387,30 @@
 		static getCompileInfo() {
 			return {
 				ir: {
-					
+
+					newEmpty(generator, block) {
+						return {
+							kind: 'input',
+						};
+					},
+
 				},
 				js: {
-					
+
+					newEmpty(node, compiler, imports) {
+						let source = '';
+
+						source += `(`;
+
+						source += `new vm.dvSoupMArray.Type()`;
+
+						source += `)`;
+
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+					},
+
 				},
 			};
-		}
-
-		newEmpty() {
-			return new MArrayType();
 		}
 
 		newNullFilled({LENGTH}) {
@@ -468,6 +483,7 @@
   		let externalExtSources = [];
 
   		// Dependencies
+  		if (!vm.jwArray) vm.extensionManager.loadExtensionIdSync('jwArray');
 			if (!vm.jwLambda) vm.extensionManager.loadExtensionIdSync('jwLambda');
       if (!vm.divIterator) externalExtSources.push(await getExtensionURL('https://extensions.penguinmod.com/extensions/Div/divIterators.js'));
 
@@ -476,6 +492,7 @@
       }
 
       // Dependency custom types
+      jwArray = vm.jwArray;
 			jwLambda = vm.jwLambda;
 			divIterator = vm.divIterator;
   	} catch (error) {
