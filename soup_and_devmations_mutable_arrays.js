@@ -7,12 +7,14 @@
 (function(Scratch) {
 	'use strict';
 
+	const loopIcon = './static/blocks-media/repeat.svg';
+
 	const vm = Scratch.vm;
 	const runtime = vm.runtime;
 
 	let jwArray;
+	let dogeiscutObject;
 	let jwLambda;
-	let divIterator;
 
 	// Copied from: https://github.com/PenguinMod/PenguinMod-Vm/blob/develop/src/util/uid.js
   const soup_ = '!#%()*+,-./:;=?@[]^_`{|}~' +
@@ -244,34 +246,23 @@
 						},
 					},
 					{
-						opcode: 'split',
-						text: 'split [STRING] by [DELIMITER]',
-						...MArray.Block,
+						opcode: 'stringify',
+						text: 'stringify [MARRAY] [STRINGIFYTYPE]',
+						blockType: Scratch.BlockType.REPORTER,
 						arguments: {
-							STRING: {
+							MARRAY: MArray.Argument,
+							STRINGIFYTYPE: {
 								type: Scratch.ArgumentType.STRING,
 								exemptFromNormalization: true,
-								defaultValue: 'foo,bar,baz',
+								defaultValue: 'compact',
+								menu: 'stringifyType',
 							},
-							DELIMITER: {
-								type: Scratch.ArgumentType.STRING,
-								exemptFromNormalization: true,
-								defaultValue: ',',
-							},
-						},
-					},
-					{
-						opcode: 'isMArray',
-						text: '[VALUE] is a mutable array?',
-						blockType: Scratch.BlockType.BOOLEAN,
-						arguments: {
-							VALUE: EmptyArgument,
 						},
 					},
 
 					'---',
 
-					// BUILDER
+					// C-BLOCKS
 
 					{
 						opcode: 'builderCurrent',
@@ -294,23 +285,57 @@
 							},
 						},
 					},
+					{
+						opcode: 'forIndex',
+						text: 'index',
+						hideFromPalette: true,
+						canDragDuplicate: true,
+						blockType: Scratch.BlockType.REPORTER,
+					},
+					{
+						opcode: 'forValue',
+						text: 'value',
+						hideFromPalette: true,
+						canDragDuplicate: true,
+						blockType: Scratch.BlockType.REPORTER,
+						allowDropAnywhere: true,
+					},
+					{
+						opcode: 'for',
+						text: ['for [INDEX] [VALUE] of [MARRAY]', '[ICON]'],
+						alignments: [null, null, Scratch.ArgumentAlignment.RIGHT],
+						branches: [{}],
+						blockType: Scratch.BlockType.COMMAND,
+						arguments: {
+							MARRAY: MArray.Argument,
+							INDEX: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: 'If you can see this, then something went really wrong and you should report an issue on this extension\'s GitHub repo. :)',
+								fillIn: 'forIndex',
+							},
+							VALUE: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: 'If you can see this, then something went really wrong and you should report an issue on this extension\'s GitHub repo. :)',
+								fillIn: 'forValue',
+							},
+							ICON: {
+								type: Scratch.ArgumentType.IMAGE,
+								dataURI: loopIcon,
+							},
+						},
+					},
 
 					'---',
 
 					// GETTERS
 
 					{
-						opcode: 'length',
-						text: 'length of [MARRAY]',
-						blockType: Scratch.BlockType.REPORTER,
-						arguments: {
-							MARRAY: MArray.Argument,
-						},
-					},
-					{
 						opcode: 'get',
 						text: 'get [INDEX] in [MARRAY]',
 						blockType: Scratch.BlockType.REPORTER,
+						allowDropAnywhere: true,
 						arguments: {
 							INDEX: {
 								type: Scratch.ArgumentType.NUMBER,
@@ -320,11 +345,215 @@
 							MARRAY: MArray.Argument,
 						},
 					},
+					{
+						opcode: 'has',
+						text: '[VALUE] in [MARRAY]?',
+						blockType: Scratch.BlockType.BOOLEAN,
+						arguments: {
+							MARRAY: MArray.Argument,
+							VALUE: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: 'foo',
+							},
+						},
+					},
+					{
+						opcode: 'length',
+						text: 'length of [MARRAY]',
+						blockType: Scratch.BlockType.REPORTER,
+						arguments: {
+							MARRAY: MArray.Argument,
+						},
+					},
+					{
+						opcode: 'id',
+						text: 'id of [MARRAY]',
+						blockType: Scratch.BlockType.REPORTER,
+						arguments: {
+							MARRAY: MArray.Argument,
+						},
+					},
+
+					'---',
+
+					// SETTERS
+
+					{
+						opcode: 'append',
+						text: 'append [VALUE] to [MARRAY]',
+						blockType: Scratch.BlockType.COMMAND,
+						arguments: {
+							MARRAY: MArray.Argument,
+							VALUE: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: 'foo',
+							},
+						},
+					},
+					{
+						opcode: 'insert',
+						text: 'insert [VALUE] at [INDEX] in [MARRAY]',
+						blockType: Scratch.BlockType.COMMAND,
+						arguments: {
+							MARRAY: MArray.Argument,
+							VALUE: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: 'foo',
+							},
+							INDEX: {
+								type: Scratch.ArgumentType.NUMBER,
+								exemptFromNormalization: true,
+								defaultValue: 1,
+							},
+						},
+					},
+					{
+						opcode: 'splice',
+						text: 'delete [WIDTH] items at [INDEX] in [MARRAY]',
+						blockType: Scratch.BlockType.COMMAND,
+						arguments: {
+							MARRAY: MArray.Argument,
+							INDEX: {
+								type: Scratch.ArgumentType.NUMBER,
+								exemptFromNormalization: true,
+								defaultValue: 1,
+							},
+							WIDTH: {
+								type: Scratch.ArgumentType.NUMBER,
+								exemptFromNormalization: true,
+								defaultValue: 1,
+							},
+						},
+					},
+
+					'---',
+
+					// FULL ARRAY MUTATE OPERATIONS
+
+					{
+						opcode: 'clear',
+						text: 'empty [MARRAY]',
+						blockType: Scratch.BlockType.COMMAND,
+						arguments: {
+							MARRAY: MArray.Argument,
+						},
+					},
+					{
+						opcode: 'reverse',
+						text: 'reverse [MARRAY]',
+						blockType: Scratch.BlockType.COMMAND,
+						arguments: {
+							MARRAY: MArray.Argument,
+						},
+					},
+					{
+						opcode: 'extend',
+						text: 'extend [MARRAY] with [EXTENSION]',
+						blockType: Scratch.BlockType.COMMAND,
+						arguments: {
+							MARRAY: MArray.Argument,
+							EXTENSION: MArray.Argument,
+						},
+					},
+					{
+						opcode: 'replace',
+						text: 'replace [MARRAY] with [REPLACEMENT]',
+						blockType: Scratch.BlockType.COMMAND,
+						arguments: {
+							MARRAY: MArray.Argument,
+							REPLACEMENT: MArray.Argument,
+						},
+					},
+					{
+						opcode: 'mapInPlace',
+						text: 'map [LAMBDA] over [MARRAY]',
+						blockType: Scratch.BlockType.COMMAND,
+						arguments: {
+							MARRAY: MArray.Argument,
+							LAMBDA: jwLambda.Argument,
+						},
+					},
+
+					'---',
+
+					// MUTABILITY OPERATIONS
+
+					{
+						opcode: 'isMArray',
+						text: '[VALUE] is a mutable array?',
+						blockType: Scratch.BlockType.BOOLEAN,
+						arguments: {
+							VALUE: EmptyArgument,
+						},
+					},
+					{
+						opcode: 'copy',
+						text: 'copy [MARRAY] [SHALLOWORDEEP]',
+						...jwArray.Block,
+						arguments: {
+							MARRAY: MArray.Argument,
+							SHALLOWORDEEP: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: 'shallow',
+								menu: 'shallowOrDeep',
+							},
+						},
+					},
+					{
+						opcode: 'freeze',
+						text: 'freeze [MARRAY] [SHALLOWORDEEP]',
+						...jwArray.Block,
+						arguments: {
+							MARRAY: MArray.Argument,
+							SHALLOWORDEEP: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: 'shallow',
+								menu: 'shallowOrDeep',
+							},
+						},
+					},
+					{
+						opcode: 'unfreeze',
+						text: 'unfreeze [ARRAY] [SHALLOWORDEEP]',
+						...MArray.Block,
+						arguments: {
+							ARRAY: jwArray.Argument,
+							SHALLOWORDEEP: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: 'shallow',
+								menu: 'shallowOrDeep',
+							},
+						},
+					},
 					
 					'---',
 
-					// FULL ARRAY OPERATIONS
+					// FULL ARRAY NON-MUTATING OPERATIONS
 
+					{
+						opcode: 'merge',
+						text: 'combine [MARRAY] and [EXTENSION]',
+						...MArray.Block,
+						arguments: {
+							MARRAY: MArray.Argument,
+							EXTENSION: MArray.Argument,
+						},
+					},
+					{
+						opcode: 'map',
+						text: 'map [LAMBDA] over [MARRAY]',
+						...MArray.Block,
+						arguments: {
+							MARRAY: MArray.Argument,
+							LAMBDA: jwLambda.Argument,
+						},
+					},
 					{
 						opcode: 'sliceStart',
 						text: 'slice [MARRAY] from [START]',
@@ -393,7 +622,108 @@
 						},
 					},
 
+					'---',
+
+					// STRINGS
+
+					{
+						opcode: 'split',
+						text: 'split [STRING] by [DELIMITER]',
+						...MArray.Block,
+						arguments: {
+							STRING: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: 'foo,bar,baz',
+							},
+							DELIMITER: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: ',',
+							},
+						},
+					},
+					{
+						opcode: 'join',
+						text: 'join [MARRAY] with [DELIMITER]',
+						blockType: Scratch.BlockType.REPORTER,
+						arguments: {
+							MARRAY: MArray.Argument,
+							DELIMITER: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: ',',
+							},
+						},
+					},
+
+					'---',
+
+					// CONVERSION
+
+					{
+						opcode: 'serialize',
+						text: 'serialize [MARRAY]',
+						...dogeiscutObject.Block,
+						arguments: {
+							MARRAY: MArray.Argument,
+						},
+					},
+					{
+						opcode: 'unserialize',
+						text: 'unserialize [SERIALIZED]',
+						...MArray.Block,
+						arguments: {
+							SERIALIZED: dogeiscutObject.Argument,
+						},
+					},
+
+					'---',
+
+					// REDUCE OPERATIONS
+
+
+					{
+						opcode: 'reduce',
+						text: 'reduce [MARRAY] by [LAMBDA] with initial [VALUE]',
+						blockType: Scratch.BlockType.REPORTER,
+						allowDropAnywhere: true,
+						arguments: {
+							MARRAY: MArray.Argument,
+							LAMBDA: jwLambda.Argument,
+							VALUE: {
+								type: Scratch.ArgumentType.STRING,
+								exemptFromNormalization: true,
+								defaultValue: '1',
+							},
+						},
+					},
+					{
+						opcode: 'isCyclical',
+						text: '[MARRAY] has infinite recursion?',
+						blockType: Scratch.BlockType.BOOLEAN,
+						arguments: {
+							MARRAY: MArray.Argument,
+						},
+					},
+
 				],
+				menus: {
+					stringifyType: {
+						acceptReporters: false,
+						items: [
+							'compact',
+							'pretty',
+						],
+					},
+					shallowOrDeep: {
+						acceptReporters: false,
+						items: [
+							'shallow',
+							'deep',
+						],
+					},
+				},
 			};
 		}
 
@@ -435,15 +765,28 @@
 						};
 					},
 
-					split(generator, block) {
+
+
+					get(generator, block) {
 						return {
 							kind: 'input',
 							args: {
-								STRING: generator.descendInputOfBlock(block, 'STRING'),
-								DELIMITER: generator.descendInputOfBlock(block, 'DELIMITER'),
+								MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+								INDEX: generator.descendInputOfBlock(block, 'INDEX'),
 							},
 						};
 					},
+
+					length(generator, block) {
+						return {
+							kind: 'input',
+							args: {
+								MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+							},
+						};
+					},
+
+
 
 					isMArray(generator, block) {
 						return {
@@ -456,21 +799,12 @@
 
 
 
-					length(generator, block) {
+					split(generator, block) {
 						return {
 							kind: 'input',
 							args: {
-								MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
-							},
-						};
-					},
-
-					get(generator, block) {
-						return {
-							kind: 'input',
-							args: {
-								MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
-								INDEX: generator.descendInputOfBlock(block, 'INDEX'),
+								STRING: generator.descendInputOfBlock(block, 'STRING'),
+								DELIMITER: generator.descendInputOfBlock(block, 'DELIMITER'),
 							},
 						};
 					},
@@ -520,35 +854,7 @@
 						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
 					},
 
-					split(node, compiler, imports) {
-						let source = '';
-						source += `(`;
 
-						source += `new vm.dvSoupMArray.Type(${compiler.descendInput(node.args.STRING).asString()}.split(${compiler.descendInput(node.args.DELIMITER).asString()}))`;
-
-						source += `)`;
-						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
-					},
-
-					isMArray(node, compiler, imports) {
-						let source = '';
-						source += `(`;
-
-						source += `${compiler.descendInput(node.args.VALUE).asUnknown()} instanceof vm.dvSoupMArray.Type`;
-
-						source += `)`;
-						return new imports.TypedInput(source, imports.TYPE_BOOLEAN);
-					},
-
-
-
-					length(node, compiler, imports) {
-						let source = '';
-
-						source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).length`;
-
-						return new imports.TypedInput(source, imports.TYPE_NUMBER);
-					},
 
 					get(node, compiler, imports) {
 						let source = '';
@@ -563,6 +869,38 @@
 						source += `];`;
 
 						source += compiler.script.yields ? `})())` : `})()`;
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+					},
+
+					length(node, compiler, imports) {
+						let source = '';
+
+						source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).length`;
+
+						return new imports.TypedInput(source, imports.TYPE_NUMBER);
+					},
+
+
+
+					isMArray(node, compiler, imports) {
+						let source = '';
+						source += `(`;
+
+						source += `${compiler.descendInput(node.args.VALUE).asUnknown()} instanceof vm.dvSoupMArray.Type`;
+
+						source += `)`;
+						return new imports.TypedInput(source, imports.TYPE_BOOLEAN);
+					},
+
+
+
+					split(node, compiler, imports) {
+						let source = '';
+						source += `(`;
+
+						source += `new vm.dvSoupMArray.Type(${compiler.descendInput(node.args.STRING).asString()}.split(${compiler.descendInput(node.args.DELIMITER).asString()}))`;
+
+						source += `)`;
 						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
 					},
 
@@ -601,8 +939,8 @@
 
   		// Dependencies
   		if (!vm.jwArray) vm.extensionManager.loadExtensionIdSync('jwArray');
+  		if (!vm.dogeiscutObject) externalExtSources.push(await getExtensionURL('https://extensions.penguinmod.com/extensions/DogeisCut/dogeiscutObject.js'));
 			if (!vm.jwLambda) vm.extensionManager.loadExtensionIdSync('jwLambda');
-      if (!vm.divIterator) externalExtSources.push(await getExtensionURL('https://extensions.penguinmod.com/extensions/Div/divIterators.js'));
 
       for (let source of externalExtSources) {
       	eval(source);
@@ -610,8 +948,8 @@
 
       // Dependency custom types
       jwArray = vm.jwArray;
+      dogeiscutObject = vm.dogeiscutObject;
 			jwLambda = vm.jwLambda;
-			divIterator = vm.divIterator;
   	} catch (error) {
   		alert(`Failed to load dependencies for Soup and Devmations\' Mutable Arrays: ${error.message}`);
 			console.error('Failed to load dependencies for Soup and Devmations\' Mutable Arrays:');
