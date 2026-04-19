@@ -930,16 +930,16 @@
 					},
 
 					builder(node, compiler, imports) {
-						const src = compiler.source
-						compiler.source = 'vm.dvSoupMArray.Type.toMArray(yield* (function*() {'
-						compiler.source += `thread._dvSoupMArrayBuilderVal ?? = [];`
-						compiler.source += `thread._dvSoupMArrayBuilderVal.push([]);`
-						compiler.descendStack(node.substack, new imports.Frame(false, undefined, true));
-						compiler.source += `return thread._dvSoupMArrayBuilderVal.pop();`
-						compiler.source += `})())`;
-						const typedinput = compiler.source
-						compiler.source = src
-						return new imports.TypedInput(typedinput, imports.TYPE_UNKNOWN)
+						let source = '';
+						source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
+						
+						source += `thread.dvSoupMArrayBuilderVal ?? = [];`;
+						source += `thread.dvSoupMArrayBuilderVal.push(new vm.dvSoupMArray.Type());`;
+						source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(false, undefined, true));
+						source += `return thread.dvSoupMArrayBuilderVal.pop();`;
+						
+						source += compiler.script.yields ? `})())` : `})()`;
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
 					},
 
 					builderCurrent(node, compiler, imports) {
