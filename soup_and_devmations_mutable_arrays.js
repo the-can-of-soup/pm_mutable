@@ -75,6 +75,7 @@
   	static escapeHTML = escapeHTML;
   	static trueSign = trueSign;
   	static mod = mod;
+  	static descendStackInline = descendStackInline;
   }
 
 	class MArrayType {
