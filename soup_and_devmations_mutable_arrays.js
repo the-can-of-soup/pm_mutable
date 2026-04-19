@@ -58,6 +58,15 @@
       .then(request => request.text());
   }
 
+  function descendStackInline(compiler, substack, frame) {
+    const oldSource = compiler.source;
+    compiler.source = '';
+    compiler.descendStack(substack, frame);
+    const result = compiler.source;
+    compiler.source = oldSource;
+    return result;
+  }
+
   class Util {
   	static vm = vm;
   	static runtime = runtime;
@@ -66,6 +75,7 @@
   	static escapeHTML = escapeHTML;
   	static trueSign = trueSign;
   	static mod = mod;
+  	static descendStackInline = descendStackInline;
   }
 
 	class MArrayType {
@@ -809,6 +819,21 @@
 						};
 					},
 
+					builder(generator, block) {
+						generator.script.yields = true
+						return {
+							kind: 'input',
+							substacks: {
+							  SUBSTACK: generator.descendSubstack(block, 'SUBSTACK'),
+							},
+						};
+					},
+
+					builderCurrent(generator, block) {
+						return {
+							kind: 'input',
+						};
+					},
 				},
 				js: {
 
@@ -904,6 +929,30 @@
 						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
 					},
 
+					builder(node, compiler, imports) {
+						let source = '';
+						source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
+						
+						source += `thread.dvSoupMArrayBuilderVal ?? = [];`;
+						source += `thread.dvSoupMArrayBuilderVal.push(new vm.dvSoupMArray.Type());`;
+						source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(false, undefined, true));
+						source += `return thread.dvSoupMArrayBuilderVal.pop();`;
+						
+						source += compiler.script.yields ? `})())` : `})()`;
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+					},
+
+					builderCurrent(node, compiler, imports) {
+						let source = '';
+						source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
+						
+						let currentArraysStack = compiler.localVariables.next();
+						src += `let ${currentArraysStack} = thread.dvSoupMArrayBuilderVal ?? [];`;
+						src += `return ${currentArraysStack}[${currentArraysStack}.length - 1] ?? new vm.dvSoupMArray.Type();`;
+						
+						source += compiler.script.yields ? `})())` : `})()`;
+						return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+					},
 				},
 			};
 		}
