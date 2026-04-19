@@ -823,8 +823,10 @@
 						generator.script.yields = true
 						return {
 							kind: 'input',
-							substack: generator.descendSubstack(block, 'SUBSTACK')
-						}
+							substacks: {
+							  SUBSTACK: generator.descendSubstack(block, 'SUBSTACK'),
+							},
+						};
 					},
 
 					builderCurrent(generator, block) {
