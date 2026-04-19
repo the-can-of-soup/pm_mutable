@@ -58,6 +58,15 @@
       .then(request => request.text());
   }
 
+  function descendStackInline(compiler, substack, frame) {
+    const oldSource = compiler.source;
+    compiler.source = '';
+    compiler.descendStack(substack, frame);
+    const result = compiler.source;
+    compiler.source = oldSource;
+    return result;
+  }
+
   class Util {
   	static vm = vm;
   	static runtime = runtime;
