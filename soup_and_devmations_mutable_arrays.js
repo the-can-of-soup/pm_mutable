@@ -831,8 +831,8 @@
 
 					builderCurrent(generator, block) {
 						return {
-							kind: 'input'
-						}
+							kind: 'input',
+						};
 					},
 				},
 				js: {
