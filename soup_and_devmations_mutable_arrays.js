@@ -162,16 +162,16 @@
 			return this.array.length;
 		}
 
-		divIntoIterHandler(Iter, { Item, Done }) {
-      		const a = this.array
+		divIntoIterHandler(Iter, {item, done}) {
+      		const a = this.array;
 			return new Iter("Mutable Array", {i: 0}, function* (state) {
 				if (state.i >= a.length) {
-					return Done()
+					return done();
 				}
-				const value = a[state.i]
-				state.i++
-				return Item(value)
-			})
+				const value = a[state.i];
+				state.i++;
+				return item(value);
+			});
     	}
 		}
 
