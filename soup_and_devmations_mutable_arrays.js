@@ -198,7 +198,9 @@
 		constructor() {
 			// Save reference to helper functions
 			vm.dvSoupMArraysUtil = Util;
-			vm.divFromIter ??= new Map()
+
+			// Register Iterators compat
+			vm.divFromIter ??= new Map();
             vm.divFromIter.set("Mutable Array", function*(...env) {
                 return new MArrayType(yield* this.fold([], 
                     function*(acc, item) {return [...acc, item]}, 
