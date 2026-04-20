@@ -911,7 +911,7 @@
 						source += `if (${MARRAY}.length === 0) return '';`;
 
 						source += `return ${MARRAY}.array[`;
-						source += `vm.dvSoupMArraysUtil.mod(Math.floor(${compiler.descendInput(node.args.INDEX).asNumber()}), ${MARRAY}.length) - 1`
+						source += `vm.dvSoupMArraysUtil.mod(Math.floor(${compiler.descendInput(node.args.INDEX).asNumber()}) - 1, ${MARRAY}.length)`
 						source += `];`;
 
 						source += compiler.script.yields ? `})())` : `})()`;
