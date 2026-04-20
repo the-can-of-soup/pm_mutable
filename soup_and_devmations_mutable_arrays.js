@@ -98,13 +98,6 @@
 
 		static toMArray(value) {
 			if (value instanceof MArrayType) return value;
-			if (typeof value == 'string') {
-				try {
-					return new MArrayType(JSON.parse(value))
-				} catch(e) {
-					return new MArrayType([value])
-				}
-			}
 			return new MArrayType(); // @TODO
 		}
 
