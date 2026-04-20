@@ -82,98 +82,98 @@
 		// PenguinMod
 		customId = 'dvSoupMArray';
 		_monitorUpToDate = true;
-
+	
 		// Custom
 		id = null;
 		array = null;
 		_toListEditorLastResult = null;
-
+	
 		static serialize(mArray) {
 			return []; // @TODO
 		}
-
+	
 		static unserialize(serialiedMArray) {
 			return new MArrayType(); // @TODO
 		}
-
+	
 		static toMArray(value) {
 			if (value instanceof MArrayType) return value;
 			return new MArrayType(); // @TODO
 		}
-
+	
 		constructor(array = null) {
 			if (array === null) array = [];
-
+	
 			this.array = array;
 			this.id = uid();
 		}
-
+	
 		toString() {
 			return 'TODO'; // @TODO
 		}
-
+	
 		toJSON() {
 			return {}; // @TODO
 		}
-
+	
 		static fromJSON(JSON) {
 			// Should return `null` if the JSON is invalid or cannot be converted.
 			return new MArrayType(); // @TODO
 		}
-
+	
 		toReporterContent() {
 			return document.createElement('span'); // @TODO
 		}
-
+	
 		toMonitorContent() {
 			this._monitorUpToDate = true;
 			return this.toReporterContent(); // @TODO
 		}
-
+	
 		toListItem() {
 			this._monitorUpToDate = true;
 			return this.toMonitorContent(); // @TODO
 		}
-
+	
 		pokeMonitor() {
 			this._monitorUpToDate = false;
 		}
-
+	
 		jwArrayHandler() {
 			return `<span style="color: #ff3d6e">M</span>Array${escapeHTML(`<${this.length}>`)}`;
 		}
-
+	
 		dogeiscutObjectHandler() {
 			return '<i>TODO</i>'; // @TODO
 		}
-
+	
 		toListEditor() {
 			return this.toJSON();
 		}
-
+	
 		fromListEditor(edit) {
 			if (edit === this._toListEditorLastResult ?? this.toListEditor()) {
 				return this;
 			}
 			return MArrayType.fromJSON(edit) ?? edit;
 		}
-
+	
 		get length() {
 			return this.array.length;
 		}
-
-		divIntoIterHandler(Iter, {item, done}) {
-      		const a = this.array;
+	
+		divIntoIterHandler(Iter, {Item, Done}) {
+			const a = this.array;
 			return new Iter("Mutable Array", {i: 0}, function* (state) {
 				if (state.i >= a.length) {
-					return done();
+					return Done();
 				}
 				const value = a[state.i];
 				state.i++;
-				return item(value);
+				return Item(value);
 			});
-    	}
 		}
+	}
 
 	const MArray = {
 		Type: MArrayType,
