@@ -161,7 +161,19 @@
 		get length() {
 			return this.array.length;
 		}
-	}
+
+		divIntoIterHandler(Iter, {item, done}) {
+      		const a = this.array;
+			return new Iter("Mutable Array", {i: 0}, function* (state) {
+				if (state.i >= a.length) {
+					return done();
+				}
+				const value = a[state.i];
+				state.i++;
+				return item(value);
+			});
+    	}
+		}
 
 	const MArray = {
 		Type: MArrayType,
@@ -186,6 +198,15 @@
 		constructor() {
 			// Save reference to helper functions
 			vm.dvSoupMArraysUtil = Util;
+
+			// Register Iterators compat
+			vm.divFromIter ??= new Map();
+            vm.divFromIter.set("Mutable Array", function*(...env) {
+                return new MArrayType(yield* this.fold([], 
+                    function*(acc, item) {return [...acc, item]}, 
+                    ...env
+                ));
+			});
 
 			// Register compiled blocks
       runtime.registerCompiledExtensionBlocks('dvSoupMArrays', MArraysExtension.getCompileInfo());
@@ -890,7 +911,7 @@
 						source += `if (${MARRAY}.length === 0) return '';`;
 
 						source += `return ${MARRAY}.array[`;
-						source += `vm.dvSoupMArraysUtil.mod(Math.floor(${compiler.descendInput(node.args.INDEX).asNumber()}), ${MARRAY}.length)`
+						source += `vm.dvSoupMArraysUtil.mod(Math.floor(${compiler.descendInput(node.args.INDEX).asNumber()}) - 1, ${MARRAY}.length)`
 						source += `];`;
 
 						source += compiler.script.yields ? `})())` : `})()`;
