@@ -98,6 +98,13 @@
 
 		static toMArray(value) {
 			if (value instanceof MArrayType) return value;
+			if (typeof value == 'string') {
+				try {
+					return new MArrayType(JSON.parse(value))
+				} catch(e) {
+					return new MArrayType([value])
+				}
+			}
 			return new MArrayType(); // @TODO
 		}
 
@@ -909,7 +916,7 @@
 						source += `if (${MARRAY}.length === 0) return '';`;
 
 						source += `return ${MARRAY}.array[`;
-						source += `vm.dvSoupMArraysUtil.mod(Math.floor(${compiler.descendInput(node.args.INDEX).asNumber()}), ${MARRAY}.length)`
+						source += `vm.dvSoupMArraysUtil.mod(Math.floor(${compiler.descendInput(node.args.INDEX).asNumber()}), ${MARRAY}.length) - 1`
 						source += `];`;
 
 						source += compiler.script.yields ? `})())` : `})()`;
