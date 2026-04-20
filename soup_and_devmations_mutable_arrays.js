@@ -108,6 +108,18 @@
       this.id = uid();
     }
   
+    divIntoIterHandler(IteratorType, {Item, Done}) {
+      // Respects mid-loop array mutations like a `for (let i = 0; i < this.array.length; i++)` loop
+      return IteratorType.overArray('MArray', this.array);
+    }
+
+    static *fromIterator(...env) {
+      return new MArrayType(yield* this.fold([],
+        function*(acc, item) {return [...acc, item]}, 
+        ...env,
+      ));
+    }
+  
     toString() {
       return 'TODO'; // @TODO
     }
@@ -161,18 +173,6 @@
     get length() {
       return this.array.length;
     }
-  
-    divIntoIterHandler(Iter, {Item, Done}) {
-      const a = this.array;
-      return new Iter("Mutable Array", {i: 0}, function* (state) {
-        if (state.i >= a.length) {
-          return Done();
-        }
-        const value = a[state.i];
-        state.i++;
-        return Item(value);
-      });
-    }
   }
 
   const MArray = {
@@ -199,14 +199,9 @@
       // Save reference to helper functions
       vm.dvSoupMArraysUtil = Util;
 
-      // Register Iterators compat
+      // Register Iterators collect to mutable array compat
       vm.divFromIter ??= new Map();
-      vm.divFromIter.set("Mutable Array", function*(...env) {
-        return new MArrayType(yield* this.fold([], 
-          function*(acc, item) {return [...acc, item]}, 
-          ...env,
-          ));
-      });
+      vm.divFromIter.set('Mutable Array', MArrayType.fromIterator);
 
       // Register compiled blocks
       runtime.registerCompiledExtensionBlocks('dvSoupMArrays', MArraysExtension.getCompileInfo());
