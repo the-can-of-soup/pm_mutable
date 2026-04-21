@@ -1,7 +1,7 @@
 // Name: Mutable Arrays
 // ID: dvSoupMArrays
 // Description: Combine all of the benefits of Lists and Arrays, and more! Supports infinite recursion and has cross-compat with Arrays and Iterators.
-// By: the-can-of-soup and DashDevmationsDash
+// By: the-can-of-soup (@soup on PenguinMod) and DashDevmationsDash
 // License: MIT
 
 // GitHub repo: https://github.com/the-can-of-soup/pm_mutable
