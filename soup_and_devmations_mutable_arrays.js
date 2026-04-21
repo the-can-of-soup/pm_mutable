@@ -4,6 +4,8 @@
 // By: the-can-of-soup and DashDevmationsDash
 // License: MIT
 
+// GitHub repo: https://github.com/the-can-of-soup/pm_mutable
+
 (function(Scratch) {
   'use strict';
 
