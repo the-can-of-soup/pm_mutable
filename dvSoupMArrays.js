@@ -191,6 +191,31 @@
     push(...values) {
       return this.array.push(...values);
     }
+
+    [Symbol.iterator]() {
+      let index = 0;
+      const array = this.array;
+      return {
+        next() {
+          if (index < array.length) {
+            const i = index;
+            const v = array[index];
+            index++
+            return { 
+              value: {
+                value: v,
+                index: i + 1,
+              },
+              done: false 
+            };
+          } else {
+            return { 
+              done: true 
+            };
+          }
+        }
+      }
+    }
   }
 
   const MArray = {
