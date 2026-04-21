@@ -188,10 +188,6 @@
       return this.array.length;
     }
 
-    push(...values) {
-      return this.array.push(...values);
-    }
-
     [Symbol.iterator]() {
       let index = 0;
       const array = this.array;
@@ -215,6 +211,10 @@
           }
         }
       }
+    }
+    
+    push(...values) {
+      return this.array.push(...values);
     }
   }
 
