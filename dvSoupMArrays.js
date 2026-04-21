@@ -792,7 +792,7 @@
               'deep',
             ],
           },
-        },
+        }
       };
     }
 
@@ -905,6 +905,29 @@
               kind: 'input',
             };
           },
+
+          for(generator, block) {
+            generator.script.yields = true
+            return {
+              kind: 'stack',
+              args: {
+                MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+                SUBSTACK: generator.descendSubstack(block, 'SUBSTACK'),
+              }
+            }
+          },
+
+          forIndex(generator, block) {
+            return {
+              kind: 'input',
+            };
+          },
+
+          forValue(generator, block) {
+            return {
+              kind: 'input',
+            };
+          }
         },
         js: {
 
@@ -1028,6 +1051,35 @@
             src += `let ${currentArraysStack} = thread.dvSoupMArrayBuilderVal ?? [];`;
             src += `return ${currentArraysStack}[${currentArraysStack}.length - 1] ?? new vm.dvSoupMArray.Type();`;
             
+            source += compiler.script.yields ? `})())` : `})()`;
+            return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+          },
+
+          for(node, compiler, imports) {
+            compiler.source = '';
+            compiler.source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
+            compiler.source += `for (const v of ${compiler.descendInput(node.args.MARRAY).asUnknown()}) {`;
+            compiler.source += `thread._dvSoupMArraysForIndex = v.index;`;
+            compiler.source += `thread._dvSoupMArraysForValue = v.value;`;
+            compiler.source += descendStackInline(compiler, node.args.SUBSTACK, new imports.Frame(false, undefined, true));
+            compiler.source += `}`;
+            compiler.source += compiler.script.yields ? `})())` : `})()`;
+          },
+
+          forIndex(node, compiler, imports) {
+            let source = '';
+            source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`
+            let v = `thread._dvSoupMArraysForIndex`;
+            source += `return ${v} ? ${v} : "";`;
+            source += compiler.script.yields ? `})())` : `})()`;
+            return new imports.TypedInput(source, imports.TYPE_NUMBER);
+          },
+
+          forValue(node, compiler, imports) {
+            let source = '';
+            source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`
+            let v = `thread._dvSoupMArraysForValue`;
+            source += `return ${v} ? ${v} : 0;`;
             source += compiler.script.yields ? `})())` : `})()`;
             return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
           },
