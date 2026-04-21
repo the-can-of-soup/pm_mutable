@@ -39,7 +39,7 @@
   - [ ] For loop (should use `MARRAY.forEach((value, index) => { /* ... */ })` loop; this will only work once `MArrayType.prototype.forEach` has been implemented)
   - [ ] Includes/has/in (main logic should be in `MArrayType.prototype.includes`; should check if the value is in the array using JS `Array.prototype.includes` (which behaves like `===` except for `NaN`))
   - [ ] Get ID (`MARRAY.id`)
-  - [ ] Append (main logic should be in `MArrayType.prototype.push` and should use `this.array.push`)
+  - [x] Append (main logic should be in `MArrayType.prototype.push` and should use `this.array.push`)
   - [ ] Insert (index input should be floored and then constrained such that too high inputs are treated as the list's length + 1 and too low inputs are treated as `1`; then actual insert logic should be in `MArrayType.prototype.splice`)
   - [ ] Delete (index input should be floored and then wrapped within the list's bounds using `vm.dvSoupMArraysUtil.mod` (same logic as get block); then actual delete logic should be in `MArrayType.prototype.splice`)
   - [ ] Empty (should use `MARRAY.length = 0`; main logic should be in `MArrayType.prototype.length` **setter**, which should use `this.array.length` setter)

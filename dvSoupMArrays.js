@@ -90,6 +90,10 @@
     array = null;
     _toListEditorLastResult = null;
   
+
+
+    // CONSTRUCTORS / DESTRUCTORS
+
     static serialize(mArray) {
       return []; // @TODO
     }
@@ -109,6 +113,10 @@
       this.array = array;
       this.id = uid();
     }
+
+
+
+    // HANDLERS
   
     divIntoIterHandler(IteratorType, {Item, Done}) {
       // Respects mid-loop array mutations like a `for (let i = 0; i < this.array.length; i++)` loop
@@ -171,9 +179,17 @@
       }
       return MArrayType.fromJSON(edit) ?? edit;
     }
+
+
+
+    // OPERATIONS
   
     get length() {
       return this.array.length;
+    }
+
+    push(...values) {
+      return this.array.push(...values);
     }
   }
 
@@ -712,6 +728,14 @@
 
 
           {
+            opcode: 'isCyclical',
+            text: '[MARRAY] has infinite recursion?',
+            blockType: Scratch.BlockType.BOOLEAN,
+            arguments: {
+              MARRAY: MArray.Argument,
+            },
+          },
+          {
             opcode: 'reduce',
             text: 'reduce [MARRAY] by [LAMBDA] with initial [VALUE]',
             blockType: Scratch.BlockType.REPORTER,
@@ -724,14 +748,6 @@
                 exemptFromNormalization: true,
                 defaultValue: '1',
               },
-            },
-          },
-          {
-            opcode: 'isCyclical',
-            text: '[MARRAY] has infinite recursion?',
-            blockType: Scratch.BlockType.BOOLEAN,
-            arguments: {
-              MARRAY: MArray.Argument,
             },
           },
 
@@ -810,6 +826,18 @@
               kind: 'input',
               args: {
                 MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+              },
+            };
+          },
+
+
+
+          append(generator, block) {
+            return {
+              kind: 'stack',
+              args: {
+                MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+                VALUE: generator.descendInputOfBlock(block, 'VALUE'),
               },
             };
           },
@@ -921,6 +949,13 @@
             source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).length`;
 
             return new imports.TypedInput(source, imports.TYPE_NUMBER);
+          },
+
+
+
+          append(node, compiler, imports) {
+            compiler.source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()})`
+            compiler.source += `.push(${compiler.descendInput(node.args.VALUE).asUnknown()});`;
           },
 
 
