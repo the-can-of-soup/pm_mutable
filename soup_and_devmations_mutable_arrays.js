@@ -110,7 +110,7 @@
   
     divIntoIterHandler(IteratorType, {Item, Done}) {
       // Respects mid-loop array mutations like a `for (let i = 0; i < this.array.length; i++)` loop
-      return IteratorType.overArray('MArray', this.array);
+      return IteratorType.overArray({kind: 'MArray', kindHTML: '<span style="color: #ff3d6e">M</span>Array'}, this.array);
     }
 
     static *fromIterator(...env) {
