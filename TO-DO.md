@@ -11,6 +11,7 @@
 ## Mutable Arrays
 - [x] Make thumbnail
 - [x] Make icon
+  - [ ] Add icon
 - [ ] Implement [the iterable protocol](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols) for `MArrayType` (should use a generator `*[Symbol.iterator]()` function; should store its iterator (index) and reference to target MArray internally and check if end of array is reached and get from target on every loop; that way arrays can be mutated while they are being looped over).
 - [ ] Implement `MArrayType.prototype.forEach` whose callback arguments should behave like `Array.prototype.forEach`, but whose iteration method should behave like `MArrayType.prototype[Symbol.iterator]`.
 - [ ] Implement `MArrayType.prototype.toRaw` which should recursively replace Mutable Array or Mutable Object values with new raw arrays and objects with `null` prototype. Make sure recursive and duplicate references are preserved.
