@@ -1042,7 +1042,7 @@
             
             source += `thread.dvSoupMArrayBuilderVal ?? = [];`;
             source += `thread.dvSoupMArrayBuilderVal.push(new vm.dvSoupMArray.Type());`;
-            source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(false, undefined, true));
+            source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(false, 'dvSoupMArrays.builder'));
             source += `return thread.dvSoupMArrayBuilderVal.pop();`;
             
             source += compiler.script.yields ? `})())` : `})()`;
