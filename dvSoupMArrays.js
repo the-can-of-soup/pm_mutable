@@ -907,14 +907,16 @@
           },
 
           for(generator, block) {
-            generator.script.yields = true
+            generator.script.yields = true;
             return {
               kind: 'stack',
               args: {
                 MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+              },
+              substacks: {
                 SUBSTACK: generator.descendSubstack(block, 'SUBSTACK'),
-              }
-            }
+              },
+            };
           },
 
           forIndex(generator, block) {
