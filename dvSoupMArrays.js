@@ -1058,7 +1058,6 @@
           },
 
           for(node, compiler, imports) {
-            compiler.source = '';
             compiler.source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
             compiler.source += `for (const v of ${compiler.descendInput(node.args.MARRAY).asUnknown()}) {`;
             compiler.source += `thread._dvSoupMArraysForIndex = v.index;`;
