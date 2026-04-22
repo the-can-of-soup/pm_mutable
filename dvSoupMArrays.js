@@ -1063,11 +1063,16 @@
 
           for(node, compiler, imports) {
             compiler.source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
-            compiler.source += `for (const v of ${compiler.descendInput(node.args.MARRAY).asUnknown()}) {`;
-            compiler.source += `thread._dvSoupMArraysForIndex = v.index;`;
-            compiler.source += `thread._dvSoupMArraysForValue = v.value;`;
-            compiler.source += descendStackInline(compiler, node.args.SUBSTACK, new imports.Frame(false, undefined, true));
-            compiler.source += `}`;
+            compiler.source += `vm.dvSoupMArrays.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()})`;
+            const value = compiler.localVariables.next();
+            const index = compiler.localVariables.next();
+            compiler.source += `.forEach((${value}, ${index}) => {`;
+            
+            compiler.source += `thread._dvSoupMArraysForIndex = ${index};`;
+            compiler.source += `thread._dvSoupMArraysForValue = ${value};`;
+            compiler.source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(true, 'dvSoupMArrays.for'));
+            
+            compiler.source += `});`;
           },
 
           forIndex(node, compiler, imports) {
