@@ -1082,7 +1082,7 @@
             source += `thread._dvSoupMArraysForIndex ?? ''`;
             
             source += `)`;
-            return new imports.TypedInput(source, imports.TYPE_NUMBER);
+            return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
           },
 
           forValue(node, compiler, imports) {
