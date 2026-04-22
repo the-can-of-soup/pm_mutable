@@ -1077,10 +1077,11 @@
 
           forIndex(node, compiler, imports) {
             let source = '';
-            source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`
-            let v = `thread._dvSoupMArraysForIndex`;
-            source += `return ${v} ? ${v} : "";`;
-            source += compiler.script.yields ? `})())` : `})()`;
+            source += `(`;
+            
+            source += `thread._dvSoupMArraysForIndex ?? ''`;
+            
+            source += `)`;
             return new imports.TypedInput(source, imports.TYPE_NUMBER);
           },
 
