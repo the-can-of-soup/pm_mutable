@@ -211,6 +211,10 @@
           }
         }
       }
+    *[Symbol.iterator]() {
+      for (let i = 0; i < this.length; i++) {
+        yield this.array[i];
+      }
     }
     
     push(...values) {
