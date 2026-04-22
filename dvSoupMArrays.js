@@ -1087,11 +1087,12 @@
 
           forValue(node, compiler, imports) {
             let source = '';
-            source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`
-            let v = `thread._dvSoupMArraysForValue`;
-            source += `return ${v} ? ${v} : 0;`;
-            source += compiler.script.yields ? `})())` : `})()`;
-            return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+            source += `(`;
+            
+            source += `thread._dvSoupMArraysForValue ?? 0`;
+            
+            source += `)`;
+            return new imports.TypedInput(source, imports.TYPE_NUMBER);
           },
         },
       };
