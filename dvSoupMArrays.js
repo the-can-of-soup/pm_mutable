@@ -1064,7 +1064,6 @@
             compiler.source += `thread._dvSoupMArraysForValue = v.value;`;
             compiler.source += descendStackInline(compiler, node.args.SUBSTACK, new imports.Frame(false, undefined, true));
             compiler.source += `}`;
-            compiler.source += compiler.script.yields ? `})())` : `})()`;
           },
 
           forIndex(node, compiler, imports) {
