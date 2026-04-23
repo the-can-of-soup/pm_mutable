@@ -188,29 +188,6 @@
       return this.array.length;
     }
 
-    [Symbol.iterator]() {
-      let index = 0;
-      const array = this.array;
-      return {
-        next() {
-          if (index < array.length) {
-            const i = index;
-            const v = array[index];
-            index++
-            return { 
-              value: {
-                value: v,
-                index: i + 1,
-              },
-              done: false 
-            };
-          } else {
-            return { 
-              done: true 
-            };
-          }
-        }
-      }
     *[Symbol.iterator]() {
       for (let i = 0; i < this.length; i++) {
         yield this.array[i];
