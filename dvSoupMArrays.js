@@ -1046,8 +1046,8 @@
             source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
             
             let currentArraysStack = compiler.localVariables.next();
-            src += `let ${currentArraysStack} = thread.dvSoupMArrayBuilderVal ?? [];`;
-            src += `return ${currentArraysStack}[${currentArraysStack}.length - 1] ?? new vm.dvSoupMArray.Type();`;
+            source += `let ${currentArraysStack} = thread.dvSoupMArrayBuilderVal ?? [];`;
+            source += `return ${currentArraysStack}[${currentArraysStack}.length - 1] ?? new vm.dvSoupMArray.Type();`;
             
             source += compiler.script.yields ? `})())` : `})()`;
             return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
