@@ -188,28 +188,15 @@
       return this.array.length;
     }
 
-    [Symbol.iterator]() {
-      let index = 0;
-      const array = this.array;
-      return {
-        next() {
-          if (index < array.length) {
-            const i = index;
-            const v = array[index];
-            index++
-            return { 
-              value: {
-                value: v,
-                index: i + 1,
-              },
-              done: false 
-            };
-          } else {
-            return { 
-              done: true 
-            };
-          }
-        }
+    *[Symbol.iterator]() {
+      for (let i = 0; i < this.length; i++) {
+        yield this.array[i];
+      }
+    }
+    
+    forEach(callback, thisArg) {
+      for (let i = 0; i < this.length; i++) {
+        callback(this.array[i], i, this);
       }
     }
     
@@ -791,8 +778,8 @@
               'shallow',
               'deep',
             ],
-          },
-        },
+          }
+        }
       };
     }
 
@@ -905,6 +892,31 @@
               kind: 'input',
             };
           },
+
+          for(generator, block) {
+            generator.script.yields = true;
+            return {
+              kind: 'stack',
+              args: {
+                MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+              },
+              substacks: {
+                SUBSTACK: generator.descendSubstack(block, 'SUBSTACK'),
+              },
+            };
+          },
+
+          forIndex(generator, block) {
+            return {
+              kind: 'input',
+            };
+          },
+
+          forValue(generator, block) {
+            return {
+              kind: 'input',
+            };
+          }
         },
         js: {
 
@@ -1013,7 +1025,7 @@
             
             source += `thread.dvSoupMArrayBuilderVal ?? = [];`;
             source += `thread.dvSoupMArrayBuilderVal.push(new vm.dvSoupMArray.Type());`;
-            source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(false, undefined, true));
+            source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(false, 'dvSoupMArrays.builder'));
             source += `return thread.dvSoupMArrayBuilderVal.pop();`;
             
             source += compiler.script.yields ? `})())` : `})()`;
@@ -1030,6 +1042,40 @@
             
             source += compiler.script.yields ? `})())` : `})()`;
             return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+          },
+
+          for(node, compiler, imports) {
+            compiler.source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
+            compiler.source += `vm.dvSoupMArrays.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()})`;
+            const value = compiler.localVariables.next();
+            const index = compiler.localVariables.next();
+            compiler.source += `.forEach((${value}, ${index}) => {`;
+            
+            compiler.source += `thread._dvSoupMArraysForIndex = ${index};`;
+            compiler.source += `thread._dvSoupMArraysForValue = ${value};`;
+            compiler.source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(true, 'dvSoupMArrays.for'));
+            
+            compiler.source += `});`;
+          },
+
+          forIndex(node, compiler, imports) {
+            let source = '';
+            source += `(`;
+            
+            source += `thread._dvSoupMArraysForIndex ?? ''`;
+            
+            source += `)`;
+            return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+          },
+
+          forValue(node, compiler, imports) {
+            let source = '';
+            source += `(`;
+            
+            source += `thread._dvSoupMArraysForValue ?? 0`;
+            
+            source += `)`;
+            return new imports.TypedInput(source, imports.TYPE_NUMBER);
           },
         },
       };
