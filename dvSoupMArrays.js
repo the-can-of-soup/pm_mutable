@@ -916,7 +916,16 @@
             return {
               kind: 'input',
             };
-          }
+          },
+
+          id(generator, block) {
+            return {
+              kind: 'input',
+              args: {
+                MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+              },
+            };
+          },
         },
         js: {
 
@@ -1076,6 +1085,14 @@
             
             source += `)`;
             return new imports.TypedInput(source, imports.TYPE_NUMBER);
+          },
+
+          id(node, compiler, imports) {
+            let source = '';
+            
+            source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).id`;
+            
+            return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
           },
         },
       };
