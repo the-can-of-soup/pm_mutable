@@ -194,6 +194,12 @@
       }
     }
     
+    forEach(callback, thisArg) {
+      for (let i = 0; i < this.length; i++) {
+        callback(this.array[i], i, this);
+      }
+    }
+    
     push(...values) {
       return this.array.push(...values);
     }
