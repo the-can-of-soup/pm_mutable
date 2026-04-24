@@ -36,9 +36,9 @@
 - [ ] Blocks:
   - [ ] Array parse (simply use `MArrayType.toMArray(VALUE)`; JSON logic should be in `MArrayType.prototype.fromJSON`, which should also be called by `MArrayType.toMArray`; it should perform a regular JSON parse, then replace all arrays with Mutable Arrays and all objects with DogeisCut Objects (unless Mutable Objects is loaded, in which case they should become Mutable Objects))
   - [ ] Stringify (should perform a JSON stringify; the main logic should be in `MArrayType.prototype.toJSON` which should simply return `this.array`, unless this is a cyclical reference in which case it returns `'...'`)
-  - [ ] For loop (should use `MARRAY.forEach((value, index) => { /* ... */ })` loop; this will only work once `MArrayType.prototype.forEach` has been implemented)
+  - [x] For loop (should use `MARRAY.forEach((value, index) => { /* ... */ })` loop; this will only work once `MArrayType.prototype.forEach` has been implemented)
   - [ ] Includes/has/in (main logic should be in `MArrayType.prototype.includes`; should check if the value is in the array using JS `Array.prototype.includes` (which behaves like `===` except for `NaN`))
-  - [ ] Get ID (`MARRAY.id`)
+  - [x] Get ID (`MARRAY.id`)
   - [x] Append (main logic should be in `MArrayType.prototype.push` and should use `this.array.push`)
   - [ ] Insert (index input should be floored and then constrained such that too high inputs are treated as the list's length + 1 and too low inputs are treated as `1`; then actual insert logic should be in `MArrayType.prototype.splice`)
   - [ ] Delete (index input should be floored and then wrapped within the list's bounds using `vm.dvSoupMArraysUtil.mod` (same logic as get block); then actual delete logic should be in `MArrayType.prototype.splice`)

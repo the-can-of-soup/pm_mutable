@@ -726,6 +726,18 @@ wrapDisplay(displayHTML)
       return this.array.length;
     }
 
+    *[Symbol.iterator]() {
+      for (let i = 0; i < this.length; i++) {
+        yield this.array[i];
+      }
+    }
+    
+    forEach(callback, thisArg) {
+      for (let i = 0; i < this.length; i++) {
+        callback(this.array[i], i, this);
+      }
+    }
+    
     push(...values) {
       this.pokeMonitor();
       return this.array.push(...values);
@@ -1321,8 +1333,8 @@ wrapDisplay(displayHTML)
               'shallow',
               'deep',
             ],
-          },
-        },
+          }
+        }
       };
     }
 
@@ -1435,6 +1447,40 @@ wrapDisplay(displayHTML)
               kind: 'input',
             };
           },
+
+          for(generator, block) {
+            generator.script.yields = true;
+            return {
+              kind: 'stack',
+              args: {
+                MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+              },
+              substacks: {
+                SUBSTACK: generator.descendSubstack(block, 'SUBSTACK'),
+              },
+            };
+          },
+
+          forIndex(generator, block) {
+            return {
+              kind: 'input',
+            };
+          },
+
+          forValue(generator, block) {
+            return {
+              kind: 'input',
+            };
+          },
+
+          id(generator, block) {
+            return {
+              kind: 'input',
+              args: {
+                MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+              },
+            };
+          },
         },
         js: {
 
@@ -1541,9 +1587,9 @@ wrapDisplay(displayHTML)
             let source = '';
             source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
             
-            source += `thread.dvSoupMArrayBuilderVal ?? = [];`;
+            source += `thread.dvSoupMArrayBuilderVal ??= [];`;
             source += `thread.dvSoupMArrayBuilderVal.push(new vm.dvSoupMArray.Type());`;
-            source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(false, undefined, true));
+            source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(false, 'dvSoupMArrays.builder'));
             source += `return thread.dvSoupMArrayBuilderVal.pop();`;
             
             source += compiler.script.yields ? `})())` : `})()`;
@@ -1555,10 +1601,52 @@ wrapDisplay(displayHTML)
             source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
             
             let currentArraysStack = compiler.localVariables.next();
-            src += `let ${currentArraysStack} = thread.dvSoupMArrayBuilderVal ?? [];`;
-            src += `return ${currentArraysStack}[${currentArraysStack}.length - 1] ?? new vm.dvSoupMArray.Type();`;
+            source += `let ${currentArraysStack} = thread.dvSoupMArrayBuilderVal ?? [];`;
+            source += `return ${currentArraysStack}[${currentArraysStack}.length - 1] ?? new vm.dvSoupMArray.Type();`;
             
             source += compiler.script.yields ? `})())` : `})()`;
+            return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+          },
+
+          for(node, compiler, imports) {
+            compiler.source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
+            compiler.source += `vm.dvSoupMArrays.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()})`;
+            const value = compiler.localVariables.next();
+            const index = compiler.localVariables.next();
+            compiler.source += `.forEach((${value}, ${index}) => {`;
+            
+            compiler.source += `thread._dvSoupMArraysForIndex = ${index};`;
+            compiler.source += `thread._dvSoupMArraysForValue = ${value};`;
+            compiler.source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(true, 'dvSoupMArrays.for'));
+            
+            compiler.source += `});`;
+          },
+
+          forIndex(node, compiler, imports) {
+            let source = '';
+            source += `(`;
+            
+            source += `thread._dvSoupMArraysForIndex ?? ''`;
+            
+            source += `)`;
+            return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+          },
+
+          forValue(node, compiler, imports) {
+            let source = '';
+            source += `(`;
+            
+            source += `thread._dvSoupMArraysForValue ?? 0`;
+            
+            source += `)`;
+            return new imports.TypedInput(source, imports.TYPE_NUMBER);
+          },
+
+          id(node, compiler, imports) {
+            let source = '';
+            
+            source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).id`;
+            
             return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
           },
         },
