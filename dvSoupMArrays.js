@@ -1485,6 +1485,27 @@ wrapDisplay(displayHTML)
               },
             };
           },
+
+
+          insert(generator, block) {
+            return {
+              kind: 'stack',
+              args: {
+                MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+                VALUE: generator.descendInputOfBlock(block, 'VALUE'),
+                INDEX: generator.descendInputOfBlock(block, 'INDEX')
+              }
+            }
+          },
+
+          clear(generator, block) {
+            return {
+              kind: 'stack',
+              args: {
+                MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+              }
+            }
+          },
         },
         js: {
 
@@ -1652,6 +1673,18 @@ wrapDisplay(displayHTML)
             source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).id`;
             
             return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
+          },
+
+          insert(node, compiler, imports) {
+            compiler.source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()})`
+            compiler.source += `.array.splice(`;
+            compiler.source += `vm.dvSoupMutableUtil.mod(Math.floor(${compiler.descendInput(node.args.INDEX).asNumber()}) - 1, vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).length + 1), 0, ${compiler.descendInput(node.args.VALUE).asUnknown()});`;
+            compiler.source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).pokeMonitor();`;
+          },
+
+          clear(node, compiler, imports) {
+            compiler.source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).array.length = 0;`;
+            compiler.source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).pokeMonitor();`;
           },
         },
       };
