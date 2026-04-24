@@ -99,121 +99,93 @@ wrapDisplay(displayHTML)
 
   // UTIL
 
-  // Copied from: https://github.com/PenguinMod/PenguinMod-Vm/blob/develop/src/util/uid.js
-  const soup_ = '!#%()*+,-./:;=?@[]^_`{|}~' +
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const uid = function () {
-    const length = 20;
-    const soupLength = soup_.length;
-    const id = [];
-    for (let i = 0; i < length; i++) {
-      id[i] = soup_.charAt(Math.random() * soupLength);
-    }
-    return id.join('');
-  };
-
-  function escapeHTML(unsafe) {
-    // Copied from jwTargets
-
-    return unsafe
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
-  function span(text) {
-    // Copied from jwArray, jwVector
-
-    let el = document.createElement('span');
-    el.innerHTML = text;
-    el.style.display = 'hidden';
-    el.style.whiteSpace = 'nowrap';
-    el.style.width = '100%';
-    el.style.textAlign = 'center';
-    return el;
-  }
-
-  function formatNumberForTableDisplay(n) {
-    // Copied from dogeiscutObjects
-
-    if (n >= 1e6) {
-      return n.toExponential(4);
-    } else {
-      n = Math.floor(n * 1000) / 1000;
-      return n.toFixed(Math.min(3, (String(n).split('.')[1] || '').length));
-    }
-  }
-
-  function trueSign(n) {
-    // The `1 / n < 0` expression catches -0.
-    return (n < 0 || 1 / n < 0) ? -1 : 1;
-  }
-
-  function mod(n, m = 1) {
-    /* if (trueSign(n) === -1) {
-      return (m - Math.abs(n % m)) % m;
-    } else {
-      return n % m;
-    } */
-    return ((n % m) + m) % m;
-  }
-
-  async function getExtensionURL(url) {
-    return await fetch(url)
-      .then(request => request.text());
-  }
-
-  function descendStackInline(compiler, substack, frame) {
-    const oldSource = compiler.source;
-    compiler.source = '';
-    compiler.descendStack(substack, frame);
-    const result = compiler.source;
-    compiler.source = oldSource;
-    return result;
-  }
-
-  const mapContainerTypes = [
-    'rawMap',
-    'rawObject',
-    'dogeiscutObject',
-    'dvSoupMObject',
-  ];
-
-  function getRawContainerType(value, nullIfNonNative = true) {
-    if (typeof value !== 'object' || value === null) return null;
-
-    if (value instanceof Array) return 'rawArray';
-    if (value instanceof Map) return 'rawMap';
-    const prototype = Object.getPrototypeOf(value);
-    if ((prototype === null || prototype === Object.prototype) && !(Symbol.iterator in value)) return 'rawObject';
-
-    /*
-    if (value instanceof jwArray.Type) return 'jwArray';
-    if (value instanceof dogeiscutObject.Type) return 'dogeiscutObject';
-    if (value instanceof MArrayType) return 'dvSoupMArray';
-    if (MObjectType !== null && value instanceof MObjectType) return 'dvSoupMObject';
-    */
-
-    return nullIfNonNative ? null : 'nonNative';
-  }
-
   class CommonUtil {
     static vm = vm;
     static runtime = runtime;
 
-    static uid = uid;
-    static escapeHTML = escapeHTML;
-    static formatNumberForTableDisplay = formatNumberForTableDisplay;
-    static trueSign = trueSign;
-    static mod = mod;
-    static getExtensionURL = getExtensionURL;
-    static descendStackInline = descendStackInline;
-    static getRawContainerType = getRawContainerType;
+    static trueSign(n) {
+      // The `1 / n < 0` expression catches -0.
+      return (n < 0 || 1 / n < 0) ? -1 : 1;
+    }
+
+    static mod(n, m = 1) {
+      /* if (trueSign(n) === -1) {
+        return (m - Math.abs(n % m)) % m;
+      } else {
+        return n % m;
+      } */
+      return ((n % m) + m) % m;
+    }
+
+    // Copied from: https://github.com/PenguinMod/PenguinMod-Vm/blob/develop/src/util/uid.js
+    static soup_ = '!#%()*+,-./:;=?@[]^_`{|}~' +
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    static uid(length = 20) {
+      const soupLength = CommonUtil.soup_.length;
+      const id = [];
+      for (let i = 0; i < length; i++) {
+        id[i] = CommonUtil.soup_.charAt(Math.random() * soupLength);
+      }
+      return id.join('');
+    };
+
+    static escapeHTML(unsafe) {
+      // Copied from jwTargets
+
+      return unsafe
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    static span(text) {
+      // Copied from jwArray, jwVector
+
+      let el = document.createElement('span');
+      el.innerHTML = text;
+      el.style.display = 'hidden';
+      el.style.whiteSpace = 'nowrap';
+      el.style.width = '100%';
+      el.style.textAlign = 'center';
+      return el;
+    }
+
+    static descendStackInline(compiler, substack, frame) {
+      const oldSource = compiler.source;
+      compiler.source = '';
+      compiler.descendStack(substack, frame);
+      const result = compiler.source;
+      compiler.source = oldSource;
+      return result;
+    }
+
+    static async getExtensionURL(url) {
+      return await fetch(url)
+        .then(request => request.text());
+    }
+
+    static getRawContainerType(value, nullIfNonNative = true) {
+      if (typeof value !== 'object' || value === null) return null;
+
+      if (value instanceof Array) return 'rawArray';
+      if (value instanceof Map) return 'rawMap';
+      const prototype = Object.getPrototypeOf(value);
+      if ((prototype === null || prototype === Object.prototype) && !(Symbol.iterator in value)) return 'rawObject';
+
+      /*
+      if (value instanceof jwArray.Type) return 'jwArray';
+      if (value instanceof dogeiscutObject.Type) return 'dogeiscutObject';
+      if (value instanceof MArrayType) return 'dvSoupMArray';
+      if (MObjectType !== null && value instanceof MObjectType) return 'dvSoupMObject';
+      */
+
+      return nullIfNonNative ? null : 'nonNative';
+    }
 
     static isContainer(value) {
-      const rawContainerType = getRawContainerType(value, /* nullIfNonNative = */ false);
+      const rawContainerType = CommonUtil.getRawContainerType(value, /* nullIfNonNative = */ false);
       if (rawContainerType === null) return false;
       if (rawContainerType !== 'nonNative') return true;
 
@@ -222,7 +194,7 @@ wrapDisplay(displayHTML)
     }
 
     static isArrayLike(value) {
-      const rawContainerType = getRawContainerType(value, /* nullIfNonNative = */ false);
+      const rawContainerType = CommonUtil.getRawContainerType(value, /* nullIfNonNative = */ false);
       if (rawContainerType === null) return false;
 
       return (rawContainerType !== 'nonNative' && rawContainerType in CommonUtil.nativeArrayInfo)
@@ -230,7 +202,7 @@ wrapDisplay(displayHTML)
     }
 
     static isMapLike(value) {
-      const rawContainerType = getRawContainerType(value, /* nullIfNonNative = */ false);
+      const rawContainerType = CommonUtil.getRawContainerType(value, /* nullIfNonNative = */ false);
       if (rawContainerType === null) return false;
 
       return (rawContainerType !== 'nonNative' && rawContainerType in CommonUtil.nativeMapInfo)
@@ -238,7 +210,7 @@ wrapDisplay(displayHTML)
     }
 
     static callArrayHandler(value, handlerName, ...args) {
-      const rawContainerType = getRawContainerType(value);
+      const rawContainerType = CommonUtil.getRawContainerType(value);
       const handler = CommonUtil.nativeArrayInfo?.[rawContainerType]?.[handlerName]
         ?? Object.getPrototypeOf(value).constructor.dvSoupArrayInfo?.[handlerName]
         ?? CommonUtil.defaultArrayInfo[handlerName];
@@ -246,7 +218,7 @@ wrapDisplay(displayHTML)
     }
 
     static callMapHandler(value, handlerName, ...args) {
-      const rawContainerType = getRawContainerType(value);
+      const rawContainerType = CommonUtil.getRawContainerType(value);
       const handler = CommonUtil.nativeMapInfo?.[rawContainerType]?.[handlerName]
         ?? Object.getPrototypeOf(value).constructor.dvSoupMapInfo?.[handlerName]
         ?? CommonUtil.defaultMapInfo[handlerName];
@@ -298,7 +270,7 @@ wrapDisplay(displayHTML)
         const limitedArray = array.slice(0, entryLimit);
 
         if (limitedArray.length === 0) {
-          const text = span(CommonUtil.callArrayHandler(this, 'getBlankDisplay'));
+          const text = CommonUtil.span(CommonUtil.callArrayHandler(this, 'getBlankDisplay'));
 
           return text.outerHTML;
         }
@@ -383,7 +355,7 @@ wrapDisplay(displayHTML)
         const limitedMap = new Map(Array.from(map).slice(0, entryLimit));
 
         if (limitedMap.size === 0) {
-          const text = span(CommonUtil.callMapHandler(this, 'getBlankDisplay'));
+          const text = CommonUtil.span(CommonUtil.callMapHandler(this, 'getBlankDisplay'));
 
           return text.outerHTML;
         }
@@ -494,6 +466,17 @@ wrapDisplay(displayHTML)
       ]);
     }
 
+    static formatNumberForTableDisplay(n) {
+      // Copied from dogeiscutObjects
+
+      if (n >= 1e6) {
+        return n.toExponential(4);
+      } else {
+        n = Math.floor(n * 1000) / 1000;
+        return n.toFixed(Math.min(3, (String(n).split('.')[1] || '').length));
+      }
+    }
+
     static tableDisplay(rootValue, isMonitor = false, noWrapper = false) {
       // Credit: Heavily modified copy of DogeisCut's code in Objects
 
@@ -543,15 +526,15 @@ wrapDisplay(displayHTML)
               if (typeof value.dogeiscutObjectHandler === 'function') return value.dogeiscutObjectHandler();
               if (typeof value.jwArrayHandler === 'function') return value.jwArrayHandler();
 
-              return span(`<i style="opacity: 0.75;">&lt;Unknown object&gt;</i>`).outerHTML;
+              return CommonUtil.span(`<i style="opacity: 0.75;">&lt;Unknown object&gt;</i>`).outerHTML;
             case 'undefined':
-              return span(`<i style="opacity: 0.75;">undefined</i>`).outerHTML;
+              return CommonUtil.span(`<i style="opacity: 0.75;">undefined</i>`).outerHTML;
             case 'number':
-              return span(escapeHTML(formatNumberForTableDisplay(value))).outerHTML;
+              return CommonUtil.span(escapeHTML(CommonUtil.formatNumberForTableDisplay(value))).outerHTML;
             case 'boolean':
-              return span(Scratch.Cast.toString(value)).outerHTML;
+              return CommonUtil.span(Scratch.Cast.toString(value)).outerHTML;
             case 'string':
-              return span(`"${escapeHTML(Scratch.Cast.toString(value))}"`).outerHTML;
+              return CommonUtil.span(`"${escapeHTML(Scratch.Cast.toString(value))}"`).outerHTML;
           }
         } catch (error) {
           console.warn(
@@ -567,11 +550,15 @@ wrapDisplay(displayHTML)
       if (noWrapper) return mainContentHTML;
 
       root.innerHTML = mainContentHTML;
-      root.appendChild(span(`${rootValueIsMapLike ? 'Size' : 'Length'}: ${rootValue.size ?? rootValue.length}`));
+      root.appendChild(CommonUtil.span(`${rootValueIsMapLike ? 'Size' : 'Length'}: ${rootValue.size ?? rootValue.length}`));
 
       return root;
     }
   }
+
+  const trueSign = CommonUtil.trueSign;
+  const mod = CommonUtil.mod;
+  const escapeHTML = CommonUtil.escapeHTML;
 
   class PrivateUtil {
 
@@ -610,7 +597,7 @@ wrapDisplay(displayHTML)
       if (array === null) array = [];
   
       this.array = array;
-      this.id = uid().substring(0, 10);
+      this.id = CommonUtil.uid(/* length = */ 10);
     }
 
 
@@ -1548,7 +1535,7 @@ wrapDisplay(displayHTML)
             
             source += `thread.dvSoupMArrayBuilderVal ??= [];`;
             source += `thread.dvSoupMArrayBuilderVal.push(new vm.dvSoupMArray.Type());`;
-            source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(false, 'dvSoupMArrays.builder'));
+            source += CommonUtil.descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(false, 'dvSoupMArrays.builder'));
             source += `return thread.dvSoupMArrayBuilderVal.pop();`;
             
             source += compiler.script.yields ? `})())` : `})()`;
@@ -1584,7 +1571,7 @@ wrapDisplay(displayHTML)
             
             compiler.source += `thread._dvSoupMArraysForIndex = ${index};`;
             compiler.source += `thread._dvSoupMArraysForValue = ${value};`;
-            compiler.source += descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(true, 'dvSoupMArrays.for'));
+            compiler.source += CommonUtil.descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(true, 'dvSoupMArrays.for'));
             
             compiler.source += `});`;
           },
@@ -1688,7 +1675,7 @@ wrapDisplay(displayHTML)
 
       // Dependencies
       if (!vm.jwArray) vm.extensionManager.loadExtensionIdSync('jwArray');
-      if (!vm.dogeiscutObject) externalExtSources.push(await getExtensionURL('https://extensions.penguinmod.com/extensions/DogeisCut/dogeiscutObject.js'));
+      if (!vm.dogeiscutObject) externalExtSources.push(await CommonUtil.getExtensionURL('https://extensions.penguinmod.com/extensions/DogeisCut/dogeiscutObject.js'));
       if (!vm.jwLambda) vm.extensionManager.loadExtensionIdSync('jwLambda');
 
       for (let source of externalExtSources) {
