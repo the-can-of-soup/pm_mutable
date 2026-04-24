@@ -124,7 +124,7 @@ wrapDisplay(displayHTML)
       const soupLength = CommonUtil.soup_.length;
       const id = [];
       for (let i = 0; i < length; i++) {
-        id[i] = soup_.charAt(Math.random() * soupLength);
+        id[i] = CommonUtil.soup_.charAt(Math.random() * soupLength);
       }
       return id.join('');
     };
