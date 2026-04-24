@@ -11,7 +11,7 @@
 ## Mutable Arrays
 - [x] Make thumbnail
 - [x] Make icon
-  - [ ] Add icon
+  - [x] Add icon
 - [ ] Finish `MArrayType` handlers, constructors, and destructors
   - [ ] `constructor` (should expect `array` arg to always be `null` or a valid array; no type conversion needed)
   - [ ] `toMArray` (should expect `value` to be able to be literally anything)
