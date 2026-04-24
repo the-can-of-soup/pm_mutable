@@ -19,6 +19,9 @@ Alternatively, name the function `dvSoupMArrayHandler` or
 `dvSoupMObjectHandler` to make it only apply to Mutable Arrays/Objects
 respectively.
 
+`vm.dvSoupMutableUtil` contains many utilities related to the container
+API, as well as some other utilities.
+
 CONTAINER API
 
 This extension provides a container API so that other container types
