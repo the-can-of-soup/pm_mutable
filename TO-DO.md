@@ -26,7 +26,7 @@
   - [x] `divIntoIterHandler`
   - [x] `fromIterator`
   - [x] `jwArrayHandler`
-  - [ ] ~~`dogeiscutObjectHandler` (should behave like jwklong Arrays do when they show up in DogeisCut Objects, but with ID above/below in code style)~~
+  - [ ] ~~`dogeiscutObjectHandler` (should behave like jwklong Arrays do when they show up in DogeisCut Objects, but with ID above/below in code style)~~ Cancelled because display patches DogeisCut Objects with an override instead
   - [x] `toListEditor`
   - [x] `fromListEditor`
 - [ ] Implement [the iterable protocol](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols) for `MArrayType` (should use a generator `*[Symbol.iterator]()` function; should store its iterator (index) and reference to target MArray internally and check if end of array is reached and get from target on every loop; that way arrays can be mutated while they are being looped over).
