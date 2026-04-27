@@ -13,7 +13,7 @@
 - [x] Make icon
   - [x] Add icon
 - [ ] Finish `MArrayType` handlers, constructors, and destructors
-  - [ ] `constructor` (should expect `array` arg to always be `null` or a valid array; no type conversion needed)
+  - [x] `constructor` (should expect `array` arg to always be `null` or a valid array; no type conversion needed)
   - [ ] `toMArray` (should expect `value` to be able to be literally anything)
   - [x] `toReporterContent` (should behave like jwklong Arrays do when DogeisCut Objects is loaded, but with ID above/below in code style, and text `MArray` ~~with purple `M` at the bottom~~)
   - [x] `toMonitorContent`
@@ -26,11 +26,11 @@
   - [x] `divIntoIterHandler`
   - [x] `fromIterator`
   - [x] `jwArrayHandler`
-  - [ ] ~~`dogeiscutObjectHandler` (should behave like jwklong Arrays do when they show up in DogeisCut Objects, but with ID above/below in code style)~~
+  - [ ] ~~`dogeiscutObjectHandler` (should behave like jwklong Arrays do when they show up in DogeisCut Objects, but with ID above/below in code style)~~ Cancelled because display patches DogeisCut Objects with an override instead
   - [x] `toListEditor`
   - [x] `fromListEditor`
-- [ ] Implement [the iterable protocol](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols) for `MArrayType` (should use a generator `*[Symbol.iterator]()` function; should store its iterator (index) and reference to target MArray internally and check if end of array is reached and get from target on every loop; that way arrays can be mutated while they are being looped over).
-- [ ] Implement `MArrayType.prototype.forEach` whose callback arguments should behave like `Array.prototype.forEach`, but whose iteration method should behave like `MArrayType.prototype[Symbol.iterator]`.
+- [x] Implement [the iterable protocol](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols) for `MArrayType` (should use a generator `*[Symbol.iterator]()` function; should store its iterator (index) and reference to target MArray internally and check if end of array is reached and get from target on every loop; that way arrays can be mutated while they are being looped over).
+- [x] Implement `MArrayType.prototype.forEach` whose callback arguments should behave like `Array.prototype.forEach`, but whose iteration method should behave like `MArrayType.prototype[Symbol.iterator]`.
 - [ ] Implement `MArrayType.prototype.toRaw` which should recursively replace Mutable Array or Mutable Object values with new raw arrays and objects with `null` prototype. Make sure recursive and duplicate references are preserved.
 - [x] Iterators support
 - [ ] Blocks:

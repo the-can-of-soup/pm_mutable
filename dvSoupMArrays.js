@@ -1563,7 +1563,6 @@ wrapDisplay(displayHTML)
           },
 
           for(node, compiler, imports) {
-            compiler.source += compiler.script.yields ? `(yield* (function*(){` : `(function(){`;
             compiler.source += `vm.dvSoupMArrays.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()})`;
             const value = compiler.localVariables.next();
             const index = compiler.localVariables.next();
