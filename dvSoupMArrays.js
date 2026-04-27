@@ -1573,6 +1573,9 @@ wrapDisplay(displayHTML)
             compiler.source += CommonUtil.descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(true, 'dvSoupMArrays.for'));
             
             compiler.source += `});`;
+
+            compiler.source += `delete thread._dvSoupMArraysForIndex;`;
+            compiler.source += `delete thread._dvSoupMArraysForValue;`;
           },
 
 
