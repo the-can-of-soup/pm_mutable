@@ -1572,6 +1572,9 @@ wrapDisplay(displayHTML)
             compiler.source += `thread._dvSoupMArraysForValue = ${value};`;
             compiler.source += CommonUtil.descendStackInline(compiler, node.substacks.SUBSTACK, new imports.Frame(true, 'dvSoupMArrays.for'));
             
+            if (!compiler.isWarp) compiler.source += `yield;`;
+            if (compiler.isWarp && vm.runtime.compilerOptions.warpTimer) compiler.source += `if (isStuck()) yield;`;
+            
             compiler.source += `});`;
           },
 
