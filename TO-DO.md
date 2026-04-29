@@ -14,15 +14,15 @@
   - [x] Add icon
 - [ ] Finish `MArrayType` handlers, constructors, and destructors
   - [x] `constructor` (should expect `array` arg to always be `null` or a valid array; no type conversion needed)
-  - [ ] `toMArray` (should expect `value` to be able to be literally anything)
+  - [x] `toMArray` (should expect `value` to be able to be literally anything)
   - [x] `toReporterContent` (should behave like jwklong Arrays do when DogeisCut Objects is loaded, but with ID above/below in code style, and text `MArray` ~~with purple `M` at the bottom~~)
   - [x] `toMonitorContent`
   - [ ] `toListItem`
-  - [ ] `toString`
-  - [ ] `toJSON`
-  - [ ] `fromJSON`
-  - [ ] `serialize`
-  - [ ] `unserialize`
+  - [x] `toString`
+  - [x] `toJSON`
+  - [x] `fromJSON`
+  - [x] `serialize`
+  - [x] `deserialize`
   - [x] `divIntoIterHandler`
   - [x] `fromIterator`
   - [x] `jwArrayHandler`
