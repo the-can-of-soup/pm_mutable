@@ -24,38 +24,102 @@ API, as well as some other utilities.
 
 CONTAINER API
 
-This extension provides a container API so that other container types
-added by other extensions can be handled properly in recursive cases.
-Each compatible container type should categorize itself as either an
-array (list-like container) or a map (object-like container).
+This extension provides a container API so that container types added
+by other extensions can be handled properly in recursive cases.
 
-Compatible containers should have a static property in their class;
+A "container" is any object exposed to the user that may contain any
+user-exposed value inside its data, and uses that value during display
+or serialization. A "container type" is a custom type whose instances
+are containers. Each compatible container type should categorize itself
+as either an array (list-like container) or a map (object-like
+container).
+
+Compatible containers must register themselves by adding an entry to
+the `vm.dvSoupContainerAPITypes` object (and creating it first if it
+doesn't exist). The key must be exactly the `customId` of the type, and
+the value must be the constructor (class) of the type.
+
+Compatible containers also must have a static property in their class;
 for array-like containers, it should be named `dvSoupArrayInfo`; for
 map-like containers, `dvSoupMapInfo`. This property should hold an
 object containing implementations of some container API methods.
 
-These methods will be called as an instance of the container type, so
-use `this` accordingly. Note: `vm.dvSoupMutableUtil.callArrayHandler`
-and `vm.dvSoupMutableUtil.callMapHandler` may be used to call handlers.
+These methods will be called as an instance of the container type,
+unless the method is labeled "static" below, in which case `this` is
+the container type; use `this` accordingly. Note: the "call handler"
+functions in `vm.dvSoupMutableUtil` should be used to call handlers if
+needed.
 
-See `vm.dvSoupMutableUtil.defaultArrayInfo` and `vm.dvSoupMutableUtil
-.defaultMapInfo` for fallback implementations.
+See `vm.dvSoupMutableUtil.defaultArrayInfo` and `vm.dvSoupMutableUtil.
+defaultMapInfo` for default (fallback) implementations.
 
 *items()
+  Either this or `toNative` (or both) are REQUIRED.
+
   Generator function that should yield items from the container in
   order. For map-like containers, each item should be a key-value pair.
-  Either this or `toNative` (or both) are required.
 
 toNative()
+  Either this or `items` (or both) are REQUIRED.
+
   Should return a native `Array` or `Map` that holds all of the
   container's items in order. This array/map does not need to be new,
-  as it will not be mutated. Either this or `items` (or both) are
-  required.
+  as it will not be mutated.
+
+fromNative(native)
+  This method is REQUIRED. This method is static.
+
+  Should return a new container instance from the given `Array` or
+  `Map`. This is used during deserialization by default.
+
+isMutable()
+  Should return truthy if the container type is mutable.
 
 is(other)
   Should return true if `other` is considered the same instance as
-  `this`. This should NOT necessarily return true if the arrays have
-  the same values.
+  `this`. This should NOT necessarily return true if the containers
+  have the same values. This should always return false for immutable
+  containers, because all of their instances are considered unique.
+
+serialize(serializeItem)
+  Should return a JSON-compatible value for saving to project files.
+  `serializeItem` is a function that should be used to serialize any
+  items of the container that are included in the result.
+
+  The default implementation of this uses `toNative` to produce an
+  entries array.
+
+deserialize(serialized, deserializeItem)
+  This method is static. This method is only for immutable containers.
+
+  Should return a new container instance from the JSON-compatible value
+  `serialized`. `deserializeItem` is a function that should be used to
+  deserialize any items of the container that are saved.
+
+  The default implementation of this uses `fromNative` to convert from
+  an entries array.
+
+deserializeIntoSelf(serialized, deserializeItem)
+  This method is only for mutable containers, and is REQUIRED.
+
+  Should mutate `this` (which will be a return value from `newEmpty`)
+  such that after mutation, it is a container instance from the JSON-
+  compatible value `serialized`. `deserializeItem` is a function that
+  should be used to deserialize any items of the container that are
+  saved.
+
+newEmpty()
+  This method is static. This method is only for mutable containers.
+
+  Should return a new blank container, which will then be mutated by
+  `deserializeIntoSelf` during deserialization.
+
+  The default implementation of this uses `fromNative` to convert from
+  an empty `Array` or `Map`.
+
+toJSONItems()
+  Should return an `Array` or `Map` of items to use when converting the
+  container to lossy JSON. If omitted, defaults to using `toNative`.
 
 getDisplay(isMonitor, render, ancestors)
   If present, overrides the default table renderer for container
@@ -71,9 +135,9 @@ getBlankDisplay()
   the container is empty.
 
 getCyclicalReferenceDisplay()
-  Should return an HTML string to use in the default table renderer if
-  the container is its own ancestor; i.e. if
-  `this.dvSoupArrayInfo.is(ancestor)` is true.
+  Should return an HTML string to use in the default table renderer in
+  the case where the container is its own ancestor; i.e. when
+  `callContainerHandler(this, 'is', ancestor)` is true.
 
 wrapDisplay(displayHTML)
   Should return a modified HTML string from `displayHTML` to wrap the
@@ -166,6 +230,23 @@ wrapDisplay(displayHTML)
         .then(request => request.text());
     }
 
+    static getContainerInfo(containerTypeId) {
+      return CommonUtil.defaultArrayInfo?.[containerTypeId]
+        ?? CommonUtil.defaultMapInfo?.[containerTypeId]
+        ?? vm?.dvSoupContainerAPITypes?.[containerTypeId]?.dvSoupArrayInfo
+        ?? vm?.dvSoupContainerAPITypes?.[containerTypeId]?.dvSoupMapInfo
+        ?? null;
+    }
+
+    static getContainerConstructor(containerTypeId) {
+      switch (containerTypeId) {
+        case 'rawArray': return Array;
+        case 'rawMap': return Map;
+        case 'rawObject': return Object;
+      }
+      return vm.dvSoupContainerAPITypes?.[containerTypeId] ?? null;
+    }
+
     static getRawContainerType(value, nullIfNonNative = true) {
       if (typeof value !== 'object' || value === null) return null;
 
@@ -184,13 +265,13 @@ wrapDisplay(displayHTML)
       return nullIfNonNative ? null : 'nonNative';
     }
 
-    static isContainer(value) {
-      const rawContainerType = CommonUtil.getRawContainerType(value, /* nullIfNonNative = */ false);
-      if (rawContainerType === null) return false;
-      if (rawContainerType !== 'nonNative') return true;
-
-      const constructor = Object.getPrototypeOf(value).constructor;
-      return 'dvSoupArrayInfo' in constructor || 'dvSoupMapInfo' in constructor;
+    static getRawContainerTypeMeta(type) {
+      switch (type) {
+        case Array: return 'rawArray';
+        case Map: return 'rawMap';
+        case Object: return 'rawObject';
+      }
+      return null;
     }
 
     static isArrayLike(value) {
@@ -209,6 +290,31 @@ wrapDisplay(displayHTML)
         || 'dvSoupMapInfo' in Object.getPrototypeOf(value).constructor;
     }
 
+    static isContainer(value) {
+      const rawContainerType = CommonUtil.getRawContainerType(value, /* nullIfNonNative = */ false);
+      if (rawContainerType === null) return false;
+      if (rawContainerType !== 'nonNative') return true;
+
+      const constructor = Object.getPrototypeOf(value).constructor;
+      return 'dvSoupArrayInfo' in constructor || 'dvSoupMapInfo' in constructor;
+    }
+
+    static isArrayLikeMeta(type) {
+      const rawContainerType = CommonUtil.getRawContainerTypeMeta(type);
+      return rawContainerType in CommonUtil.nativeArrayInfo || 'dvSoupArrayInfo' in type;
+    }
+
+    static isMapLikeMeta(type) {
+      const rawContainerType = CommonUtil.getRawContainerTypeMeta(type);
+      return rawContainerType in CommonUtil.nativeMapInfo || 'dvSoupMapInfo' in type;
+    }
+
+    static isContainerMeta(type) {
+      const rawContainerType = CommonUtil.getRawContainerTypeMeta(type);
+      if (rawContainerType !== null) return true;
+      return 'dvSoupArrayInfo' in type || 'dvSoupMapInfo' in type;
+    }
+
     static callArrayHandler(value, handlerName, ...args) {
       const rawContainerType = CommonUtil.getRawContainerType(value);
       const handler = CommonUtil.nativeArrayInfo?.[rawContainerType]?.[handlerName]
@@ -225,17 +331,79 @@ wrapDisplay(displayHTML)
       return handler.call(value, ...args);
     }
 
+    static callContainerHandler(value, handlerName, ...args) {
+      return CommonUtil.isMapLike(value)
+        ? CommonUtil.callMapHandler(value, handlerName, ...args)
+        : CommonUtil.callArrayHandler(value, handlerName, ...args);
+    }
+
+    static callStaticArrayHandler(type, handlerName, ...args) {
+      const rawContainerType = CommonUtil.getRawContainerTypeMeta(type);
+      const handler = CommonUtil.nativeArrayInfo?.[rawContainerType]?.[handlerName]
+        ?? type.dvSoupArrayInfo?.[handlerName]
+        ?? CommonUtil.defaultArrayInfo[handlerName];
+      return handler.call(type, ...args);
+    }
+
+    static callStaticMapHandler(type, handlerName, ...args) {
+      const rawContainerType = CommonUtil.getRawContainerTypeMeta(type);
+      const handler = CommonUtil.nativeMapInfo?.[rawContainerType]?.[handlerName]
+        ?? type.dvSoupMapInfo?.[handlerName]
+        ?? CommonUtil.defaultMapInfo[handlerName];
+      return handler.call(type, ...args);
+    }
+
+    static callStaticContainerHandler(type, handlerName, ...args) {
+      return CommonUtil.isMapLikeMeta(type)
+        ? CommonUtil.callStaticMapHandler(type, handlerName, ...args)
+        : CommonUtil.callStaticArrayHandler(type, handlerName, ...args);
+    }
+
     static defaultArrayInfo = {
-      *items() {
-        yield* CommonUtil.callArrayHandler(this, 'toNative');
+      *items(_isFallback = false) {
+        if (_isFallback) throw new Error('[Mutable] [Container API] Missing `items` or `toNative` implementation!');
+        yield* CommonUtil.callArrayHandler(this, 'toNative', /* _isFallback = */ true);
       },
 
-      toNative() {
-        return Array.from(CommonUtil.callArrayHandler(this, 'items'));
+      toNative(_isFallback = false) {
+        if (_isFallback) throw new Error('[Mutable] [Container API] Missing `items` or `toNative` implementation!');
+        return Array.from(CommonUtil.callArrayHandler(this, 'items', /* _isFallback = */ true));
+      },
+
+      fromNative(native) {
+        throw new Error('[Mutable] [Container API] Missing `fromNative` implementation!');
+      },
+
+      isMutable() {
+        return false;
       },
 
       is(other) {
-        return this === other;
+        return false;
+      },
+
+      serialize(serializeItem) {
+        const items = [];
+        for (const item of CommonUtil.callArrayHandler(this, 'items')) {
+          items.push(serializeItem(item));
+        }
+        return items;
+      },
+
+      deserialize(serialized, deserializeItem) {
+        return CommonUtil.callStaticArrayHandler(this, 'fromNative', serialized.map(deserializeItem));
+      },
+
+      deserializeIntoSelf(serialized, deserializeItem) {
+        throw new Error('[Mutable] [Container API] Missing `deserializeIntoSelf` implementation!');
+      },
+
+      newEmpty() {
+        return CommonUtil.callStaticArrayHandler(this, 'fromNative', []);
+      },
+
+      toJSONItems() {
+        return CommonUtil.callArrayHandler(this, 'toNative');
       },
 
       getBlankDisplay() {
@@ -319,8 +487,42 @@ wrapDisplay(displayHTML)
         return new Map(CommonUtil.callMapHandler(this, 'items'));
       },
 
+      fromNative(native) {
+        throw new Error('[Mutable] [Container API] Missing `fromNative` implementation!');
+      },
+
       is(other) {
-        return this === other;
+        return false;
+      },
+
+      isMutable() {
+        return null;
+      },
+
+      serialize(serializeItem) {
+        const items = [];
+        for (const [key, value] of CommonUtil.callMapHandler(this, 'items')) {
+          items.push([serializeItem(key), serializeItem(value)]);
+        }
+        return items;
+      },
+
+      deserialize(serialized, deserializeItem) {
+        return CommonUtil.callStaticMapHandler(this, 'fromNative', new Map(
+          serialized.map(([key, value]) => [deserializeItem(key), deserializeItem(value)]),
+        ));
+      },
+
+      deserializeIntoSelf(serialized, deserializeItem) {
+        throw new Error('[Mutable] [Container API] Missing `deserializeIntoSelf` implementation!');
+      },
+
+      newEmpty() {
+        return CommonUtil.callStaticArrayHandler(this, 'fromNative', new Map());
+      },
+
+      toJSONItems() {
+        return CommonUtil.callMapHandler(this, 'toNative');
       },
 
       getBlankDisplay() {
@@ -413,6 +615,13 @@ wrapDisplay(displayHTML)
       rawArray: {
         *items() { yield* this; },
         toNative() { return this; },
+        fromNative(native) { return native; },
+        isMutable() { return true; },
+        is(other) { return this === other; },
+
+        deserializeIntoSelf(serialized, deserializeItem) {
+          this.push(serialized.map(deserializeItem));
+        },
 
         getBlankDisplay() { return `<i style="opacity: 0.75;">&lt;Blank Raw Array&gt;</i>`; },
         getCyclicalReferenceDisplay() { return `<i style="opacity: 0.75;">&lt;Cyclical Raw Array ref.&gt;</i>`; },
@@ -423,6 +632,15 @@ wrapDisplay(displayHTML)
       rawMap: {
         *items() { yield* this; },
         toNative() { return this; },
+        fromNative(native) { return native; },
+        isMutable() { return true; },
+        is(other) { return this === other; },
+
+        deserializeIntoSelf(serialized, deserializeItem) {
+          for (let [key, value] of serialized) {
+            this.set(deserializeItem(key), deserializeItem(value));
+          }
+        },
 
         getBlankDisplay() { return `<i style="opacity: 0.75;">&lt;Blank Raw Map&gt;</i>`; },
         getCyclicalReferenceDisplay() { return `<i style="opacity: 0.75;">&lt;Cyclical Raw Map ref.&gt;</i>`; },
@@ -433,7 +651,20 @@ wrapDisplay(displayHTML)
             if (this.hasOwnProperty(key)) yield [key, this[key]];
           }
         },
-        toNative() { return this; },
+        toNative() { return new Map(Object.entries(this)); },
+        fromNative(native) {
+          const result = Object.create(null);
+          native.forEach((value, key) => { result[key] = value; });
+          return result;
+        },
+        isMutable() { return true; },
+        is(other) { return this === other; },
+
+        deserializeIntoSelf(serialized, deserializeItem) {
+          for (let [key, value] of serialized) {
+            this[key] = value;
+          }
+        },
 
         getBlankDisplay() { return `<i style="opacity: 0.75;">&lt;Blank Raw Object&gt;</i>`; },
         getCyclicalReferenceDisplay() { return `<i style="opacity: 0.75;">&lt;Cyclical Raw Object ref.&gt;</i>`; },
@@ -445,7 +676,7 @@ wrapDisplay(displayHTML)
         [jwArray.Type, {
           *items() { yield* this.array; },
           toNative() { return this.array; },
-          is(other) { return false; }, // Remove to allow jwklong Arrays to be hidden in display when a cyclical reference
+          fromNative(native) { return new jwArray.Type(native); },
 
           getBlankDisplay() { return `<i style="opacity: 0.75;">&lt;Blank Array&gt;</i>`; },
           getCyclicalReferenceDisplay() { return `<i style="opacity: 0.75;">&lt;Cyclical Array ref.&gt;</i>`; },
@@ -458,7 +689,7 @@ wrapDisplay(displayHTML)
         [dogeiscutObject.Type, {
           *items() { yield* this.map; },
           toNative() { return this.map; },
-          is(other) { return false; }, // Remove to allow DogeisCut Objects to be hidden in display when a cyclical reference
+          fromNative(native) { return new dogeiscutObject.Type(native); },
 
           getBlankDisplay() { return `<i style="opacity: 0.75;">&lt;Blank Object&gt;</i>`; },
           getCyclicalReferenceDisplay() { return `<i style="opacity: 0.75;">&lt;Cyclical Object ref.&gt;</i>`; },
@@ -554,6 +785,180 @@ wrapDisplay(displayHTML)
 
       return root;
     }
+
+    static containerToJSON(value, _ancestors = null) {
+      // Accepts objects registered with the Container API.
+      //
+      // Returns a lossy object that can be stringified via `JSON.stringify`.
+      //
+      // Note that the returned value is not fully JSON-compatible; this simply removes cyclical
+      // references. `JSON.stringify` internally will still need to call `toJSON` or its equivalent
+      // on each returned value.
+
+      if (value === null) return null;
+      if (_ancestors === null) _ancestors = [];
+
+      const ancestors = _ancestors;
+
+      if (CommonUtil.isArrayLike(value)) {
+        if (ancestors.some(ancestor => CommonUtil.callArrayHandler(value, 'is', ancestor))) return ['...'];
+        return CommonUtil.callArrayHandler(value, 'toJSONItems')
+          .map(innerValue => CommonUtil.containerToJSON(innerValue, ancestors.concat([value])));
+      } else if (CommonUtil.isMapLike(value)) {
+        if (ancestors.some(ancestor => CommonUtil.callMapHandler(value, 'is', ancestor))) return {'...': '...'};
+
+        const map = CommonUtil.callMapHandler(value, 'toJSONItems');
+        const result = Object.create(null);
+        for (const [itemKey, item] of map) {
+          result[Scratch.Cast.toString(itemKey)] = CommonUtil.containerToJSON(item, ancestors.concat([value]));
+        }
+        return result;
+      } else if (typeof value === 'object') {
+        return value?.toJSON?.() ?? value?.toString?.() ?? value;
+      }
+
+      return value;
+    }
+
+    static serializeContainer(value, serializeItems = true, _root = null) {
+      // Accepts objects registered with the Container API.
+      //
+      // Returns a lossless object that contains no cyclical references while still being able
+      // to be reconstructed into the original cyclical structure. If `serializeItems` is truthy,
+      // will use the VM serializer on non-container values to make them JSON-compatible as well.
+
+      let root = _root;
+      const isRoot = root === null;
+      const isContainer = CommonUtil.isContainer(value);
+      const isMutable = isContainer && CommonUtil.callContainerHandler(value, 'isMutable');
+      const containerTypeId = isContainer ? (CommonUtil.getRawContainerType(value) ?? value.customId) : null;
+
+      // Non-container handling
+      if (!isContainer) {
+        if (value === null) return null;
+        if (typeof value === 'object') {
+          // We assume all non-container objects are custom types
+          return serializeItems
+            ? { customId: value.customId, serialized: runtime.serializers[value.customId].serialize(value) }
+            : { v: value };
+        }
+        return value;
+      }
+
+      const result = {};
+      let id = null;
+
+      result.containerType = containerTypeId;
+
+      // Set up root node
+      if (isRoot) {
+        root = result;
+        root._mutableIds = new Map(); // Mutable ID cache; will be removed from final result
+
+        root.mutableDescendants = {};
+      }
+
+      const serializeItem = (item) => (CommonUtil.serializeContainer(item, serializeItems, root));
+
+      // Container handling
+      if (isMutable) {
+        // Use only reference if this instance was already serialized
+        for (const [otherValue, otherId] of root._mutableIds) {
+          if (CommonUtil.callContainerHandler(value, 'is', otherValue)) {
+            id = otherId;
+            result.id = id;
+            return result;
+          }
+        }
+
+        // Create mutable ID
+        id = CommonUtil.uid();
+        result.id = id;
+        root._mutableIds.set(value, id);
+
+        root.mutableDescendants[id] = CommonUtil.callContainerHandler(value, 'serialize', serializeItem);
+      } else {
+        // Store data directly in result
+        result.data = CommonUtil.callContainerHandler(value, 'serialize', serializeItem);
+      }
+
+      // Remove mutable ID cache
+      if (isRoot) delete root._mutableIds;
+
+      return result;
+    }
+
+    static deserializeContainer(value, allowSerializedItems = true, _root = null) {
+      // Inverse of `serializeContainer`. Returns null if `value` is invalid.
+
+      let root = _root;
+      const isRoot = root === null;
+
+      // Non-container handling
+      if (value === null) return null;
+      if (typeof value !== 'object') return value;
+      if ('v' in value) return value.v;
+      if ('customId' in value) {
+        if (!allowSerializedItems) return null;
+        return runtime.serializers?.[value.customId]?.deserialize?.(value.serialized) ?? null;
+      }
+
+      // Basic validation
+      if (!('containerType' in value)) return null;
+      if (!('id' in value || 'data' in value)) return null;
+      if ('id' in value && typeof value.id !== 'string') return null;
+
+      const containerType = CommonUtil.getContainerConstructor(value.containerType);
+      if (containerType === null) return null;
+
+      // Set up root node
+      if (isRoot) {
+        root = value;
+        root._mutableIds = new Map(); // Mutable ID cache; will be removed at end
+
+        // Root validation
+        if (!('mutableDescendants' in root)) return null;
+        if (root.mutableDescendants === null) return null;
+        if (typeof root.mutableDescendants !== 'object') return null;
+        if (Array.isArray(root.mutableDescendants)) return null;
+      }
+
+      const deserializeItem = (serializedItem) => (CommonUtil.deserializeContainer(serializedItem, allowSerializedItems, root));
+
+      let id;
+      let data;
+      let result;
+
+      // Main logic
+      if ('id' in value) {
+        id = value.id;
+        if (root._mutableIds.has(id)) return root._mutableIds.get(id);
+
+        if (!(id in root.mutableDescendants)) return null;
+        data = root.mutableDescendants[id];
+
+        // Create new container and add it to cache
+        result = CommonUtil.callStaticContainerHandler(containerType, 'newEmpty');
+        root._mutableIds.set(id, result);
+
+        // Unserialize into container
+        try { CommonUtil.callContainerHandler(result, 'deserializeIntoSelf', data, deserializeItem); } catch (error) {
+          console.warn(`[Mutable] [Container API] Error deserializing: error`, error, `value`, value, `isRoot`, isRoot, `root`, root); return null;
+        }
+      } else {
+        data = value.data;
+
+        // Unserialize into new container
+        try { result = CommonUtil.callStaticContainerHandler(containerType, 'deserialize', data, deserializeItem); } catch (error) {
+          console.warn(`[Mutable] [Container API] Error deserializing: error`, error, `value`, value, `isRoot`, isRoot, `root`, root); return null;
+        }
+      }
+
+      // Remove mutable ID cache
+      if (isRoot) delete root._mutableIds;
+
+      return result;
+    }
   }
 
   const trueSign = CommonUtil.trueSign;
@@ -581,16 +986,19 @@ wrapDisplay(displayHTML)
     // CONSTRUCTORS / DESTRUCTORS
 
     static serialize(mArray) {
-      return []; // @TODO
+      return CommonUtil.serializeContainer(mArray);
     }
   
-    static unserialize(serialiedMArray) {
-      return new MArrayType(); // @TODO
+    static deserialize(serializedMArray) {
+      return CommonUtil.deserializeContainer(serializedMArray);
     }
   
     static toMArray(value) {
       if (value instanceof MArrayType) return value;
-      return new MArrayType(); // @TODO
+      if (CommonUtil.isArrayLike(value)) return new MArrayType(Array.from(CommonUtil.callArrayHandler(value, 'toNative')));
+      if (typeof value === 'string') return MArrayType.fromJSON(value) ?? new MArrayType();
+
+      return new MArrayType();
     }
   
     constructor(array = null) {
@@ -613,8 +1021,20 @@ wrapDisplay(displayHTML)
         return this.array;
       },
 
+      fromNative(native) {
+        return new MArrayType(native);
+      },
+
+      isMutable() {
+        return true;
+      },
+
       is(other) {
         return this === other;
+      },
+
+      deserializeIntoSelf(serialized, deserializeItem) {
+        this.array = serialized.map(deserializeItem);
       },
 
       getBlankDisplay() {
@@ -661,16 +1081,37 @@ wrapDisplay(displayHTML)
     }
   
     toString() {
-      return 'TODO'; // @TODO
+      return JSON.stringify(this);
     }
   
     toJSON() {
-      return {}; // @TODO
+      return CommonUtil.containerToJSON(this);
     }
   
-    static fromJSON(JSON) {
-      // Should return `null` if the JSON is invalid or cannot be converted.
-      return new MArrayType(); // @TODO
+    static fromJSON(text) {
+      let parseResult;
+      try {
+        parseResult = JSON.parse(text, function(key, value) {
+          if (value === null) return null;
+
+          if (typeof value === 'object') {
+            if (Array.isArray(value)) {
+              return new MArrayType(value);
+            } else {
+              if (MObjectType !== null) return new MObjectType(new Map(Object.entries(value)));
+              return new dogeiscutObject.Type(new Map(Object.entries(value)));
+            }
+          }
+
+          return value;
+        });
+      } catch {
+        return null;
+      }
+
+      if (parseResult === null) return null;
+      if (parseResult instanceof MArrayType) return parseResult;
+      return null;
     }
   
     toReporterContent() {
@@ -774,6 +1215,12 @@ wrapDisplay(displayHTML)
       dogeiscutObject.Type.prototype.toReporterContent = function() { return CommonUtil.tableDisplay(this); };
       dogeiscutObject.Type.prototype.toMonitorContent = function() { return CommonUtil.tableDisplay(this, /* isMonitor = */ true); };
 
+      // Register types to Container API
+      vm.dvSoupContainerAPITypes ??= {};
+      vm.dvSoupContainerAPITypes.dvSoupMArray = MArrayType;
+      vm.dvSoupContainerAPITypes.jwArray = jwArray.Type;
+      vm.dvSoupContainerAPITypes.dogeiscutObject = dogeiscutObject.Type;
+
       // Register compiled blocks
       runtime.registerCompiledExtensionBlocks('dvSoupMArrays', MArraysExtension.getCompileInfo());
 
@@ -782,7 +1229,7 @@ wrapDisplay(displayHTML)
       runtime.registerSerializer(
         'dvSoupMArray',
         MArrayType.serialize,
-        MArrayType.unserialize,
+        MArrayType.deserialize,
       );
     }
 
@@ -1268,8 +1715,8 @@ wrapDisplay(displayHTML)
             },
           },
           {
-            opcode: 'unserialize',
-            text: 'unserialize [SERIALIZED]',
+            opcode: 'deserialize',
+            text: 'deserialize [SERIALIZED]',
             ...MArray.Block,
             arguments: {
               SERIALIZED: dogeiscutObject.Argument,
@@ -1279,7 +1726,6 @@ wrapDisplay(displayHTML)
           '---',
 
           // REDUCE OPERATIONS
-
 
           {
             opcode: 'isCyclical',
@@ -1650,7 +2096,7 @@ wrapDisplay(displayHTML)
   // Validate environment
   let canLoad = false;
   if (Array.from(vm.extensionManager._loadedExtensions.keys()).includes('dvSoupMArrays')) {
-    console.warn('Soup and Devmations\' Mutable Arrays extension attempted to be loaded while already present in the project; ignoring');
+    console.warn('[Mutable Arrays] Extension attempted to be loaded while already present in the project; ignoring');
   } else {
     if (Scratch.extensions.isPenguinMod /* && !Scratch.extensions.isDinosaurMod */) {
       if (Scratch.extensions.unsandboxed) {
@@ -1691,7 +2137,7 @@ wrapDisplay(displayHTML)
       MObjectType = vm?.dvSoupMObject?.Type ?? null;
     } catch (error) {
       alert(`Failed to load dependencies for Mutable Arrays: ${error.message}`);
-      console.error('Failed to load dependencies for Mutable Arrays:\n', error);
+      console.error('[Mutable Arrays] Failed to load dependencies:\n', error);
       return;
     }
 
