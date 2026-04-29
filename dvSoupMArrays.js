@@ -89,30 +89,30 @@ serialize(serializeItem)
   The default implementation of this uses `toNative` to produce an
   entries array.
 
-unserialize(serialized, unserializeItem)
+deserialize(serialized, deserializeItem)
   This method is static. This method is only for immutable containers.
 
   Should return a new container instance from the JSON-compatible value
-  `serialized`. `unserializeItem` is a function that should be used to
-  unserialize any items of the container that are saved.
+  `serialized`. `deserializeItem` is a function that should be used to
+  deserialize any items of the container that are saved.
 
   The default implementation of this uses `fromNative` to convert from
   an entries array.
 
-unserializeIntoSelf(serialized, unserializeItem)
+deserializeIntoSelf(serialized, deserializeItem)
   This method is only for mutable containers, and is REQUIRED.
 
   Should mutate `this` (which will be a return value from `newEmpty`)
   such that after mutation, it is a container instance from the JSON-
-  compatible value `serialized`. `unserializeItem` is a function that
-  should be used to unserialize any items of the container that are
+  compatible value `serialized`. `deserializeItem` is a function that
+  should be used to deserialize any items of the container that are
   saved.
 
 newEmpty()
   This method is static. This method is only for mutable containers.
 
   Should return a new blank container, which will then be mutated by
-  `unserializeIntoSelf` during deserialization.
+  `deserializeIntoSelf` during deserialization.
 
   The default implementation of this uses `fromNative` to convert from
   an empty `Array` or `Map`.
@@ -390,12 +390,12 @@ wrapDisplay(displayHTML)
         return items;
       },
 
-      unserialize(serialized, unserializeItem) {
-        return CommonUtil.callStaticArrayHandler(this, 'fromNative', serialized.map(unserializeItem));
+      deserialize(serialized, deserializeItem) {
+        return CommonUtil.callStaticArrayHandler(this, 'fromNative', serialized.map(deserializeItem));
       },
 
-      unserializeIntoSelf(serialized, unserializeItem) {
-        throw new Error('[Mutable] [Container API] Missing `unserializeIntoSelf` implementation!');
+      deserializeIntoSelf(serialized, deserializeItem) {
+        throw new Error('[Mutable] [Container API] Missing `deserializeIntoSelf` implementation!');
       },
 
       newEmpty() {
@@ -507,14 +507,14 @@ wrapDisplay(displayHTML)
         return items;
       },
 
-      unserialize(serialized, unserializeItem) {
+      deserialize(serialized, deserializeItem) {
         return CommonUtil.callStaticMapHandler(this, 'fromNative', new Map(
-          serialized.map(([key, value]) => [unserializeItem(key), unserializeItem(value)]),
+          serialized.map(([key, value]) => [deserializeItem(key), deserializeItem(value)]),
         ));
       },
 
-      unserializeIntoSelf(serialized, unserializeItem) {
-        throw new Error('[Mutable] [Container API] Missing `unserializeIntoSelf` implementation!');
+      deserializeIntoSelf(serialized, deserializeItem) {
+        throw new Error('[Mutable] [Container API] Missing `deserializeIntoSelf` implementation!');
       },
 
       newEmpty() {
@@ -619,8 +619,8 @@ wrapDisplay(displayHTML)
         isMutable() { return true; },
         is(other) { return this === other; },
 
-        unserializeIntoSelf(serialized, unserializeItem) {
-          this.push(serialized.map(unserializeItem));
+        deserializeIntoSelf(serialized, deserializeItem) {
+          this.push(serialized.map(deserializeItem));
         },
 
         getBlankDisplay() { return `<i style="opacity: 0.75;">&lt;Blank Raw Array&gt;</i>`; },
@@ -636,9 +636,9 @@ wrapDisplay(displayHTML)
         isMutable() { return true; },
         is(other) { return this === other; },
 
-        unserializeIntoSelf(serialized, unserializeItem) {
+        deserializeIntoSelf(serialized, deserializeItem) {
           for (let [key, value] of serialized) {
-            this.set(unserializeItem(key), unserializeItem(value));
+            this.set(deserializeItem(key), deserializeItem(value));
           }
         },
 
@@ -660,7 +660,7 @@ wrapDisplay(displayHTML)
         isMutable() { return true; },
         is(other) { return this === other; },
 
-        unserializeIntoSelf(serialized, unserializeItem) {
+        deserializeIntoSelf(serialized, deserializeItem) {
           for (let [key, value] of serialized) {
             this[key] = value;
           }
@@ -888,7 +888,7 @@ wrapDisplay(displayHTML)
       return result;
     }
 
-    static unserializeContainer(value, allowSerializedItems = true, _root = null) {
+    static deserializeContainer(value, allowSerializedItems = true, _root = null) {
       // Inverse of `serializeContainer`. Returns null if `value` is invalid.
 
       let root = _root;
@@ -923,7 +923,7 @@ wrapDisplay(displayHTML)
         if (Array.isArray(root.mutableDescendants)) return null;
       }
 
-      const unserializeItem = (serializedItem) => (CommonUtil.unserializeContainer(serializedItem, allowSerializedItems, root));
+      const deserializeItem = (serializedItem) => (CommonUtil.deserializeContainer(serializedItem, allowSerializedItems, root));
 
       let id;
       let data;
@@ -942,14 +942,14 @@ wrapDisplay(displayHTML)
         root._mutableIds.set(id, result);
 
         // Unserialize into container
-        try { CommonUtil.callContainerHandler(result, 'unserializeIntoSelf', data, unserializeItem); } catch (error) {
+        try { CommonUtil.callContainerHandler(result, 'deserializeIntoSelf', data, deserializeItem); } catch (error) {
           console.warn(`[Mutable] [Container API] Error deserializing: error`, error, `value`, value, `isRoot`, isRoot, `root`, root); return null;
         }
       } else {
         data = value.data;
 
         // Unserialize into new container
-        try { result = CommonUtil.callStaticContainerHandler(containerType, 'unserialize', data, unserializeItem); } catch (error) {
+        try { result = CommonUtil.callStaticContainerHandler(containerType, 'deserialize', data, deserializeItem); } catch (error) {
           console.warn(`[Mutable] [Container API] Error deserializing: error`, error, `value`, value, `isRoot`, isRoot, `root`, root); return null;
         }
       }
@@ -989,8 +989,8 @@ wrapDisplay(displayHTML)
       return CommonUtil.serializeContainer(mArray);
     }
   
-    static unserialize(serializedMArray) {
-      return CommonUtil.unserializeContainer(serializedMArray);
+    static deserialize(serializedMArray) {
+      return CommonUtil.deserializeContainer(serializedMArray);
     }
   
     static toMArray(value) {
@@ -1033,8 +1033,8 @@ wrapDisplay(displayHTML)
         return this === other;
       },
 
-      unserializeIntoSelf(serialized, unserializeItem) {
-        this.array = serialized.map(unserializeItem);
+      deserializeIntoSelf(serialized, deserializeItem) {
+        this.array = serialized.map(deserializeItem);
       },
 
       getBlankDisplay() {
@@ -1229,7 +1229,7 @@ wrapDisplay(displayHTML)
       runtime.registerSerializer(
         'dvSoupMArray',
         MArrayType.serialize,
-        MArrayType.unserialize,
+        MArrayType.deserialize,
       );
     }
 
@@ -1715,8 +1715,8 @@ wrapDisplay(displayHTML)
             },
           },
           {
-            opcode: 'unserialize',
-            text: 'unserialize [SERIALIZED]',
+            opcode: 'deserialize',
+            text: 'deserialize [SERIALIZED]',
             ...MArray.Block,
             arguments: {
               SERIALIZED: dogeiscutObject.Argument,
@@ -1726,7 +1726,6 @@ wrapDisplay(displayHTML)
           '---',
 
           // REDUCE OPERATIONS
-
 
           {
             opcode: 'isCyclical',
