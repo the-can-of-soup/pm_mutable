@@ -586,7 +586,7 @@ wrapDisplay(displayHTML)
           valueCell.style.padding = '2px 6px';
           valueCell.style.background = background;
 
-          valueCenteringDiv.innerHTML = render(value);
+          valueCenteringDiv.innerHTML = render(value); // @TODO: replace with `renderKey` <=========================================================================================================
 
           keyCell.appendChild(keyCenteringDiv);
           row.appendChild(keyCell);
@@ -757,15 +757,15 @@ wrapDisplay(displayHTML)
               if (typeof value.dogeiscutObjectHandler === 'function') return value.dogeiscutObjectHandler();
               if (typeof value.jwArrayHandler === 'function') return value.jwArrayHandler();
 
-              return CommonUtil.span(`<i style="opacity: 0.75;">&lt;Unknown object&gt;</i>`).outerHTML;
+              return `<i style="opacity: 0.75;">&lt;Unknown object&gt;</i>`;
             case 'undefined':
-              return CommonUtil.span(`<i style="opacity: 0.75;">undefined</i>`).outerHTML;
+              return `<i style="opacity: 0.75;">undefined</i>`;
             case 'number':
-              return CommonUtil.span(escapeHTML(CommonUtil.formatNumberForTableDisplay(value))).outerHTML;
+              return escapeHTML(CommonUtil.formatNumberForTableDisplay(value));
             case 'boolean':
-              return CommonUtil.span(Scratch.Cast.toString(value)).outerHTML;
+              return Scratch.Cast.toString(value);
             case 'string':
-              return CommonUtil.span(`"${escapeHTML(Scratch.Cast.toString(value))}"`).outerHTML;
+              return `"${escapeHTML(Scratch.Cast.toString(value))}"`;
           }
         } catch (error) {
           console.warn(
