@@ -1916,6 +1916,15 @@ wrapDisplay(displayHTML)
               },
             };
           },
+
+          isCyclical(generator, block) {
+            return {
+              kind: 'input',
+              args: {
+                MARRAY: generator.descendInputOfBlock(block, 'MARRAY'),
+              },
+            };
+          }
         },
         js: {
 
@@ -2088,6 +2097,16 @@ wrapDisplay(displayHTML)
             source += `)`;
             return new imports.TypedInput(source, imports.TYPE_UNKNOWN);
           },
+
+          isCyclical(node, compiler, imports) {
+            let source = '';
+            source += `(`;
+            source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()}).array.includes(`;
+            source += `vm.dvSoupMArray.Type.toMArray(${compiler.descendInput(node.args.MARRAY).asUnknown()})`;
+            source += `)`;
+            source += `)`;
+            return new imports.TypedInput(source, imports.TYPE_BOOLEAN);
+          }
         },
       };
     }
